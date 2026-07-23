@@ -9,6 +9,7 @@ Open `index.html` and search for `✏️ EDIT` — every editable spot is marked
 - your name, role line, and intro
 - contact slots (email / github / base)
 - each of the 4 project sections (title, chip label, description)
+- education line at the bottom (kept deliberately quiet)
 
 Keep descriptions to ~3 short sentences so everything stays on one A4 page.
 

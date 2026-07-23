@@ -35,6 +35,7 @@
     --blue:#4b87b8;
     --amber:#d08a2e;
     --rose:#b85c72;
+    --violet:#6f639f;
     --px:'Press Start 2P',monospace;
     --body:'VT323',monospace;
   }
@@ -83,7 +84,16 @@
   .exp-bar i.off{background:transparent;outline:2px solid var(--mid);outline-offset:-2px}
 
   /* ---------- header ---------- */
-  header{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+  header{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;position:relative}
+  #dot-target{display:inline-block;width:6px;height:2px}
+  #thrown-dot{
+    position:absolute;width:5px;height:5px;background:var(--ink);
+    display:none;z-index:3;pointer-events:none;
+  }
+  #splash-fx{
+    position:absolute;display:none;z-index:3;pointer-events:none;
+  }
+  .sr-dot{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}
   .name-block{flex:1;min-width:260px}
   h1{
     font-family:var(--px);font-size:clamp(19px,4.4vw,30px);
@@ -115,9 +125,29 @@
     position:relative;height:56px;margin:26px 0 8px;overflow:hidden;
     border-bottom:4px solid var(--ink);
   }
-  .track .walker{position:absolute;bottom:0;left:-64px;animation:cross 14s linear infinite}
-  .track.slow .walker{animation-duration:18s}
+  /* steps() = chunky per-pixel movement instead of smooth glide */
+  .track .walker{position:absolute;bottom:0;left:-64px;animation:cross 14s steps(140) infinite}
+  .track.slow .walker{animation-duration:18s;animation-timing-function:steps(180)}
   @keyframes cross{from{left:-64px}to{left:100%}}
+  /* ---------- scene 1: courier, thrown dot, hit GITHUB block ---------- */
+  #scene1{
+    position:absolute;left:0;top:0;width:0;height:0;
+    overflow:hidden;pointer-events:none;z-index:2;
+  }
+  #scene1 .actor,#scene1 .prop{position:absolute;left:0;top:0}
+  #scene1 .prop{display:none}
+  #scene1 .ring{
+    position:absolute;display:none;
+    border:2px solid var(--ink);pointer-events:none;
+  }
+  .lvl5{background:var(--violet);white-space:nowrap}
+  .inventory .slot{will-change:transform}
+
+  /* debris is drawn on the same 5px pixel grid as the characters, not typed */
+  .track .dust{
+    position:absolute;bottom:0;
+    pointer-events:none;image-rendering:pixelated;
+  }
   @media (prefers-reduced-motion:reduce){
     .track .walker{animation:none;left:12%}
   }
@@ -150,6 +180,19 @@
   .a .lvl-tag{background:var(--amber)}
   .r .lvl-tag{background:var(--rose)}
 
+  /* ---------- education (quiet, footnote-level) ---------- */
+  .edu{
+    display:flex;justify-content:space-between;align-items:baseline;
+    gap:8px 24px;flex-wrap:wrap;
+    padding:16px 0 2px;
+    color:#5c6150;font-size:18px;line-height:1.3;
+  }
+  .edu .item{display:flex;align-items:baseline;gap:9px}
+  .edu b{
+    font-family:var(--px);font-size:7px;letter-spacing:1px;
+    color:var(--mid);font-weight:400;
+  }
+
   /* ---------- footer ---------- */
   .continue{
     display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
@@ -170,19 +213,27 @@
   @page{size:A4;margin:0}
   @media print{
     body{background:none;padding:0}
+    /* the thrown dot becomes a real period on paper */
+    #thrown-dot,#splash-fx{display:none!important}
+    .sr-dot{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
     .sheet{
-      max-width:none;margin:7mm 9mm;box-shadow:none;
-      padding:0 34px 22px;
+      max-width:none;margin:4mm 9mm;box-shadow:none;
+      padding:0 34px 10px;
     }
-    .statusbar{padding:12px 0 8px;margin-bottom:14px}
+    .statusbar{padding:9px 0 6px;margin-bottom:10px}
     .intro{font-size:18px}
-    .inventory{margin-top:12px}
-    .level{padding:14px 0 10px}
+    .inventory{margin-top:11px}
+    .level{padding:8px 0 6px}
     .level p{font-size:17px}
-    .track{height:44px;margin:14px 0 4px}
+    /* 50px = exactly the courier's height, so nothing gets clipped */
+    .track{height:50px;margin:6px 0 3px}
+    /* the delivery scene freezes: courier mid-walk with the dot, block at rest */
+    #scene1 .ring,#scene1 .lvl5{display:none!important}
+    .inventory .slot{transform:none!important}
     .track .walker{animation:none;left:16%}
     .track.slow .walker{left:60%}
-    .continue{padding-top:12px}
+    .edu{padding:7px 0 0;font-size:15px;gap:4px 20px}
+    .continue{padding-top:6px}
   }
 </style>
 </head>
@@ -206,26 +257,30 @@
       <p class="role">CV &middot; SOFTWARE DEVELOPER</p>
       <!-- ✏️ EDIT: your name -->
       <h1>DENIS<br><span class="accent">MATEJCIK</span></h1>
-      <!-- ✏️ EDIT: intro — 2-3 short sentences about you -->
+      <!-- ✏️ EDIT: intro — 2-3 short sentences about you.
+           NOTE: the last sentence has no typed period — the little guy throws
+           the dot that lands after the final word (see #dot-target below). -->
       <p class="intro">
         I build things that feel alive &mdash; marketplaces, games, AI agents.
         Small team energy, fast iteration, and I actually ship.
-        Currently open to the next quest.
+        Currently open to the next quest<span class="sr-dot">.</span><span id="dot-target" aria-hidden="true"></span>
       </p>
     </div>
-    <div class="builder"><canvas id="spr-hammer" aria-label="pixel builder hammering the name into place"></canvas></div>
+    <div class="builder"><canvas id="spr-thrower" aria-label="pixel character playing catch with the sentence's period"></canvas></div>
+    <div id="thrown-dot" aria-hidden="true"></div>
+    <canvas id="splash-fx" aria-hidden="true"></canvas>
   </header>
 
   <!-- ✏️ EDIT: contact slots — add/remove as needed -->
   <div class="inventory">
     <div class="slot"><b>EMAIL</b><span><a href="mailto:matejcikdenis@gmail.com">matejcikdenis@gmail.com</a></span></div>
-    <div class="slot"><b>GITHUB</b><span><a href="https://github.com/Mild-Solvent">Mild-Solvent</a></span></div>
+    <div class="slot" id="gh-slot"><b>GITHUB</b><span><a href="https://github.com/Mild-Solvent">Mild-Solvent</a></span></div>
     <div class="slot"><b>BASE</b><span>Slovakia / remote</span></div>
   </div>
 
-  <div class="track" role="presentation">
-    <div class="walker"><canvas id="spr-carry"></canvas></div>
-  </div>
+  <!-- the courier walks this line; his whole delivery is drawn in #scene1 -->
+  <div class="track" id="carry-track" role="presentation"></div>
+  <div id="scene1" aria-hidden="true"></div>
 
   <section class="level g">
     <div class="txt">
@@ -299,8 +354,14 @@
     <div class="scene"><canvas id="spr-spy" aria-label="pixel spy character next to redacted bars"></canvas></div>
   </section>
 
-  <div class="track slow" role="presentation">
+  <div class="track slow" id="sweep-track" role="presentation">
     <div class="walker"><canvas id="spr-sweep"></canvas></div>
+  </div>
+
+  <!-- ✏️ EDIT: education — keep it short, it's meant to whisper -->
+  <div class="edu">
+    <span class="item"><b>EDU</b> BSc Computer Science &middot; Middlesex University, London</span>
+    <span class="item">Mechatronics &middot; secondary technical school</span>
   </div>
 
   <div class="continue">
@@ -355,51 +416,356 @@
     for(var i=0;i<registry.length;i++) registry[i]();
   });
 
-  /* builder hammering the name into place */
-  sprite('spr-hammer', [
-    ['.......kk.',
-     '..hhhh.kk.',
-     '.hhhhhh.s.',
-     '..skks....',
-     '..ssss....',
-     '.bbbbbb...',
-     '..bbbb....',
-     '..k..k....',
-     '.kk..kk...'],
-    ['..........',
-     '..hhhh....',
-     '.hhhhhh...',
-     '..skks....',
-     '..ssss.s..',
-     '.bbbbbb.kk',
-     '..bbbb..kk',
-     '..k..k....',
-     '.kk..kk...']
-  ], {scale:5, fps:2});
+  /* ---- track 1: the courier delivers a dot to the GITHUB block ----
+     walks in carrying the dot → throws it up → block bounces and rattles →
+     he waits, hands on hips, looking around → block drops a LVL 5 tag →
+     he catches it and walks on with it. Poses are the character only;
+     whatever he carries is a separate prop pinned to his hands. */
+  (function(){
+    var sheet = document.querySelector('.sheet');
+    var track = document.getElementById('carry-track');
+    var slot  = document.getElementById('gh-slot');
+    var scene = document.getElementById('scene1');
+    if(!sheet || !track || !slot || !scene) return;
+    var S = 5, GW = 10, GH = 10, HGT = GH*S;
 
-  /* courier carrying a block across the divider */
-  sprite('spr-carry', [
-    ['.gggggg.',
-     '.gggggg.',
-     's.hhhh.s',
-     '.hhhhhh.',
-     '..skks..',
-     '..ssss..',
-     '.bbbbbb.',
-     '..bbbb..',
-     '..k..k..',
-     '.kk..kk.'],
-    ['.gggggg.',
-     '.gggggg.',
-     's.hhhh.s',
-     '.hhhhhh.',
-     '..skks..',
-     '..ssss..',
-     '.bbbbbb.',
-     '..bbbb..',
-     '..k.k...',
-     '.kk.kk..']
-  ], {scale:5, fps:4});
+    /* --- poses: {g:grid, arm:row the hands sit on} --- */
+    var WALK = [
+      {arm:4, g:[            /* passing — body high, legs under the hips */
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..k..k....',
+       '..kk.kk...']},
+      {arm:5, g:[            /* contact — body low, long stride */
+       '..........',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '.kk...kk..']},
+      {arm:4, g:[            /* passing — blink */
+       '..hhhh....',
+       '.hhhhhh...',
+       '..ssss....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..k..k....',
+       '..kk.kk...']},
+      {arm:5, g:[            /* contact — shorter stride */
+       '..........',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..kk..kk..']}
+    ];
+    var HOLD = {arm:0, g:[   /* dot hoisted overhead, ready to throw */
+       '.s......s.',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbb...',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..kk.kk...']};
+    var THROW = {arm:0, g:[  /* let go — arm follows through */
+       '........s.',
+       '..hhhh.s..',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbb...',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..kk.kk...']};
+    var CATCH = {arm:1, g:[  /* hands up to receive */
+       '..........',
+       '.s......s.',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbb...',
+       '..bbbb....',
+       '..k..k....',
+       '..kk.kk...']};
+    /* waiting: hands on hips, glancing about */
+    function hips(face){ return {arm:5, g:[
+       '..........',
+       '..hhhh....',
+       '.hhhhhh...',
+       face,
+       '..ssss....',
+       'sbbbbbbs..',
+       's.bbbb.s..',
+       '..bbbb....',
+       '..k..k....',
+       '..kk.kk...']}; }
+    var IDLE_AHEAD = hips('..skks....');
+    var IDLE_LEFT  = hips('..kkss....');
+    var IDLE_RIGHT = hips('..sskk....');
+    /* ~4.7s of waiting around */
+    var IDLE_SEQ = [
+      [IDLE_AHEAD,900],[IDLE_LEFT,800],[IDLE_AHEAD,500],
+      [IDLE_RIGHT,800],[IDLE_AHEAD,600],[IDLE_LEFT,700],[IDLE_AHEAD,400]
+    ];
+    var WAIT_MS = 0;
+    for(var q=0;q<IDLE_SEQ.length;q++) WAIT_MS += IDLE_SEQ[q][1];
+
+    function paint(cv, grid){
+      var ctx = cv.getContext('2d');
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(var y=0;y<grid.length;y++)
+        for(var x=0;x<grid[y].length;x++){
+          var ch = grid[y][x];
+          if(ch !== '.'){ ctx.fillStyle = C[ch] || C.k; ctx.fillRect(x*S,y*S,S,S); }
+        }
+    }
+
+    var actor = document.createElement('canvas');
+    actor.className='actor'; actor.width = GW*S; actor.height = HGT;
+    scene.appendChild(actor);
+
+    var dot = document.createElement('canvas');
+    dot.className='prop'; dot.width = 4*S; dot.height = 4*S;
+    paint(dot, ['.kk.','kkkk','kkkk','.kk.']);
+    scene.appendChild(dot);
+
+    var badge = document.createElement('span');
+    badge.className='lvl-tag lvl5 prop'; badge.textContent='LVL 5';
+    scene.appendChild(badge);
+
+    var rings = [document.createElement('div'), document.createElement('div')];
+    for(var r=0;r<2;r++){ rings[r].className='ring'; scene.appendChild(rings[r]); }
+
+    /* --- geometry, re-measured every frame so a late font swap or any
+           reflow can never leave the scene pinned to stale coordinates --- */
+    var geo = {}, bw = 0, bh = 0;
+    function measureBadge(){
+      var prev = badge.style.display;
+      badge.style.visibility='hidden'; badge.style.display='block';
+      bw = badge.offsetWidth; bh = badge.offsetHeight;
+      badge.style.display = prev; badge.style.visibility='';
+    }
+    function layout(){
+      var sr = sheet.getBoundingClientRect();
+      var cs = getComputedStyle(sheet);
+      var ox = sr.left + (parseFloat(cs.borderLeftWidth)||0);
+      var oy = sr.top  + (parseFloat(cs.borderTopWidth)||0);
+      var tr = track.getBoundingClientRect();
+      var gr = slot.getBoundingClientRect();
+      var sx = Math.round(tr.left - ox);
+      var sw = Math.round(tr.width), sh = sheet.clientHeight;
+      if(geo.sx !== sx){ scene.style.left = sx+'px'; scene.style.top='0px'; geo.sx = sx; }
+      if(geo.sw !== sw){ scene.style.width = sw+'px'; geo.sw = sw; }
+      if(geo.sh !== sh){ scene.style.height = sh+'px'; geo.sh = sh; }
+      geo.w = tr.width;
+      /* whole pixels only — half-pixel offsets would soften the pixel art */
+      geo.ground = Math.round((tr.top - oy) + track.clientHeight);
+      geo.top = geo.ground - HGT;
+      geo.slotL = Math.round(gr.left - ox - sx);
+      geo.slotT = Math.round(gr.top - oy);
+      geo.slotW = Math.round(gr.width);
+      geo.slotH = Math.round(gr.height);
+      geo.slotB = geo.slotT + geo.slotH;
+      geo.stop = Math.round((geo.slotL + geo.slotW/2 - GW*S/2)/S)*S;
+    }
+    measureBadge();
+    layout();
+    window.addEventListener('resize', function(){ measureBadge(); layout(); });
+    if(document.fonts && document.fonts.ready)
+      document.fonts.ready.then(function(){ measureBadge(); layout(); });
+
+    /* --- prop placement --- */
+    function snap(v){ return Math.round(v/S)*S; }
+    function showDotAtHands(x, pose){
+      dot.style.display='block';
+      dot.style.left = (x + GW*S)+'px';
+      dot.style.top  = (geo.top + (pose.arm-1)*S)+'px';
+    }
+    function showBadgeAtHands(x, pose){
+      badge.style.display='block';
+      badge.style.left = (x + GW*S)+'px';
+      badge.style.top  = Math.round(geo.top + pose.arm*S + S/2 - bh/2)+'px';
+    }
+    function clearHit(){
+      slot.style.transform='';
+      rings[0].style.display='none'; rings[1].style.display='none';
+    }
+    function drawPose(x, pose){
+      actor.style.left = x+'px';
+      actor.style.top  = geo.top+'px';
+      paint(actor, pose.g);
+    }
+
+    /* --- the block takes a hit: bounces up, edges rattle --- */
+    function blockHit(){
+      var t0 = performance.now(), DUR = 720, tick = 0;
+      (function step(now){
+        var t = (now - t0)/DUR;
+        if(t >= 1 || phase !== 'wait'){ clearHit(); return; }
+        var up = t < 0.55
+          ? -11*Math.sin(Math.PI*(t/0.55))
+          :  -4*Math.sin(Math.PI*((t-0.55)/0.45));
+        up = Math.round(up/2)*2;              /* chunky, 2px steps */
+        slot.style.transform = 'translateY('+up+'px)';
+        if((tick++ % 3) === 0){               /* rattle, not blur */
+          var amp = 3*(1-t);
+          for(var i=0;i<2;i++){
+            var el = rings[i];
+            el.style.display='block';
+            el.style.left  = (geo.slotL + Math.round((Math.random()*2-1)*amp))+'px';
+            el.style.top   = (geo.slotT + up + Math.round((Math.random()*2-1)*amp))+'px';
+            el.style.width = (geo.slotW-4)+'px';
+            el.style.height= (geo.slotH-4)+'px';
+            el.style.opacity = (0.5*(1-t)).toFixed(2);
+          }
+        }
+        requestAnimationFrame(step);
+      })(t0);
+    }
+
+    /* --- choreography --- */
+    var SPEED = 90;                            /* px per second */
+    var phase, pStart, x, startX, throwFrom, dropTo;
+
+    function go(p){ phase = p; pStart = performance.now(); }
+
+    function reset(){
+      layout();
+      x = -GW*S - 20; startX = x;
+      dot.style.display='none';
+      badge.style.display='none';
+      clearHit();
+      go('in');
+    }
+
+    function walkPose(){ return WALK[Math.floor(Math.abs(x-startX)/11) % WALK.length]; }
+
+    function frame(now){
+      layout();                     /* self-healing against any reflow */
+      var e = now - pStart;
+
+      if(phase==='in'){
+        x = Math.min(geo.stop, snap(startX + SPEED*(e/1000)));
+        var p = walkPose();
+        drawPose(x, p); showDotAtHands(x, p);
+        if(x >= geo.stop) go('hold');
+      }
+      else if(phase==='hold'){                 /* raise the dot overhead */
+        drawPose(x, HOLD);
+        var t = Math.min(1, e/300);
+        var fromY = geo.top + (WALK[0].arm-1)*S, toY = geo.top - 4*S;
+        var fromX = x + GW*S, toX = x + 2*S;
+        dot.style.display='block';
+        dot.style.left = snap(fromX + (toX-fromX)*t)+'px';
+        dot.style.top  = snap(fromY + (toY-fromY)*t)+'px';
+        if(e > 550){ throwFrom = {x:x+2*S, y:geo.top-4*S}; go('throw'); }
+      }
+      else if(phase==='throw'){
+        drawPose(x, THROW);
+        var tt = Math.min(1, e/300);
+        var ease = 1-(1-tt)*(1-tt);            /* fast off the hands, slows at the block */
+        var tx = geo.slotL + geo.slotW/2 - 2*S, ty = geo.slotB - 4*S;
+        dot.style.left = snap(throwFrom.x + (tx-throwFrom.x)*ease)+'px';
+        dot.style.top  = snap(throwFrom.y + (ty-throwFrom.y)*ease)+'px';
+        /* order matters: the hit checks that we are already waiting */
+        if(tt >= 1){ dot.style.display='none'; go('wait'); blockHit(); }
+      }
+      else if(phase==='wait'){                 /* hands on hips, looking around */
+        var acc = 0, pose = IDLE_SEQ[IDLE_SEQ.length-1][0];
+        for(var i=0;i<IDLE_SEQ.length;i++){
+          acc += IDLE_SEQ[i][1];
+          if(e < acc){ pose = IDLE_SEQ[i][0]; break; }
+        }
+        drawPose(x, pose);
+        if(e >= WAIT_MS){
+          clearHit();
+          dropTo = geo.top + CATCH.arm*S - bh;
+          go('drop');
+        }
+      }
+      else if(phase==='drop'){                 /* the block spits out LVL 5 */
+        drawPose(x, CATCH);
+        badge.style.display='block';
+        badge.style.left = Math.round(x + (GW*S - bw)/2)+'px';
+        var fy = geo.slotB, td = Math.min(1, e/550);
+        var y = fy + (dropTo-fy)*(td*td);      /* accelerating fall */
+        if(e > 550 && e <= 700) y = dropTo + 5*Math.sin(Math.PI*((e-550)/150)); /* caught */
+        badge.style.top = snap(y)+'px';
+        if(e > 700) go('carry');
+      }
+      else if(phase==='carry'){                /* a beat, then off he goes */
+        drawPose(x, WALK[0]);
+        showBadgeAtHands(x, WALK[0]);
+        if(e > 450){ startX = x; go('out'); }
+      }
+      else if(phase==='out'){
+        x = snap(startX + SPEED*(e/1000));
+        var po = walkPose();
+        drawPose(x, po); showBadgeAtHands(x, po);
+        if(x > geo.w + 20) go('gap');
+      }
+      else if(phase==='gap'){
+        badge.style.display='none';
+        if(e > 900) reset();
+      }
+
+      raf = requestAnimationFrame(frame);
+    }
+
+    /* static fallbacks: reduced motion and paper both get him mid-stride */
+    function still(){
+      layout();
+      x = snap(geo.w*0.16);
+      drawPose(x, WALK[0]);
+      showDotAtHands(x, WALK[0]);
+      badge.style.display='none';
+      slot.style.transform='';
+      rings[0].style.display='none'; rings[1].style.display='none';
+    }
+
+    var raf = null;
+    if(reduced){ still(); return; }
+    reset();
+    raf = requestAnimationFrame(frame);
+
+    /* coming back to a backgrounded tab: start the delivery over cleanly */
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden && raf) reset();
+    });
+
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf = null; } still(); }
+    function thaw(){ if(!raf){ reset(); raf = requestAnimationFrame(frame); } }
+    window.addEventListener('beforeprint', freeze);
+    window.addEventListener('afterprint', thaw);
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var onMq = function(m){ if(m.matches) freeze(); else thaw(); };
+      if(mq.addEventListener) mq.addEventListener('change', onMq);
+      else if(mq.addListener) mq.addListener(onMq);
+    }
+  })();
 
   /* gas.green — watering a plant */
   sprite('spr-plant', [
@@ -506,6 +872,308 @@
      '..k.k...k..w',
      '.kk.kk..kkk.']
   ], {scale:5, fps:4});
+
+  /* ---- the period game: throw the dot, chill, get bonked, repeat ---- */
+  (function(){
+    var cv = document.getElementById('spr-thrower');
+    var dot = document.getElementById('thrown-dot');
+    var fx = document.getElementById('splash-fx');
+    var target = document.getElementById('dot-target');
+    if(!cv || !dot || !fx || !target) return;
+    var host = cv.parentElement.parentElement; /* header, position:relative */
+    var S = 5;
+
+    var IDLE1 = [
+      '...hhhh...',
+      '..hhhhhh..',
+      '...skks...',
+      '...ssss...',
+      '..bbbbbb..',
+      '...bbbb...',
+      '...k..k...',
+      '..kk..kk..'];
+    var IDLE2 = [            /* blink */
+      '...hhhh...',
+      '..hhhhhh..',
+      '...ssss...',
+      '...ssss...',
+      '..bbbbbb..',
+      '...bbbb...',
+      '...k..k...',
+      '..kk..kk..'];
+    var HOLD = [             /* dot raised, about to throw */
+      '.s.hhhh...',
+      '..hhhhhh..',
+      '...skks...',
+      '...ssss...',
+      '..bbbbbb..',
+      '...bbbb...',
+      '...k..k...',
+      '..kk..kk..'];
+    var THROW = [            /* arm out toward the text */
+      '...hhhh...',
+      '..hhhhhh..',
+      '...skks...',
+      'ss.ssss...',
+      '..bbbbbb..',
+      '...bbbb...',
+      '...k..k...',
+      '..kk..kk..'];
+    var HIT = [              /* bonk — eyes shut, sweat pixel */
+      '...hhhh..w',
+      '..hhhhhh..',
+      '...ssss...',
+      '...ssss...',
+      '..bbbbbb..',
+      '...bbbb...',
+      '...k..k...',
+      '..kk..kk..'];
+    var SPLASH = [
+      ['.....',
+       '..k..',
+       '.k.k.',
+       '..k..',
+       '.....'],
+      ['k...k',
+       '.....',
+       '.....',
+       '.....',
+       'k...k']];
+
+    cv.width = 10*S; cv.height = 8*S; cv.style.width = (10*S)+'px';
+    var ctx = cv.getContext('2d');
+    function pose(fr){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(var y=0;y<fr.length;y++)for(var x=0;x<fr[y].length;x++){
+        var ch=fr[y][x];
+        if(ch!=='.'){ctx.fillStyle=C[ch]||C.k;ctx.fillRect(x*S,y*S,S,S);}
+      }
+    }
+
+    var FS = 3;
+    fx.width = 5*FS; fx.height = 5*FS; fx.style.width = (5*FS)+'px';
+    var fctx = fx.getContext('2d');
+    function splashAt(x,y,done){
+      fx.style.display='block';
+      fx.style.left=(x-2*FS)+'px'; fx.style.top=(y-2*FS)+'px';
+      var i=0;
+      (function step(){
+        if(i>=SPLASH.length){fx.style.display='none';if(done)done();return;}
+        fctx.clearRect(0,0,fx.width,fx.height);
+        var fr=SPLASH[i++];
+        for(var r=0;r<5;r++)for(var c=0;c<5;c++)
+          if(fr[r][c]!=='.'){fctx.fillStyle=C.k;fctx.fillRect(c*FS,r*FS,FS,FS);}
+        setTimeout(step,110);
+      })();
+    }
+
+    function hostRect(){return host.getBoundingClientRect();}
+    function handPos(){
+      var r=cv.getBoundingClientRect(),h=hostRect();
+      return {x:r.left-h.left+1*S, y:r.top-h.top+3*S};
+    }
+    function headPos(){
+      var r=cv.getBoundingClientRect(),h=hostRect();
+      return {x:r.left-h.left+5*S, y:r.top-h.top+1*S};
+    }
+    function targetPos(){
+      var r=target.getBoundingClientRect(),h=hostRect();
+      return {x:r.left-h.left, y:r.bottom-h.top-6};
+    }
+    function placeDot(p){dot.style.display='block';dot.style.left=p.x+'px';dot.style.top=p.y+'px';}
+    /* 5px in flight (visible projectile), 3px at rest (actual period size) */
+    function dotSize(n){dot.style.width=n+'px';dot.style.height=n+'px';}
+    function restAtTarget(){var tp=targetPos();dotSize(3);placeDot({x:tp.x+1,y:tp.y+3});}
+
+    var GRID=4; /* flight positions snap to a pixel grid — no smooth glide */
+    function snap(v){return Math.round(v/GRID)*GRID;}
+    function fly(from,to,ms,arc,done){
+      var t0=performance.now();
+      (function step(now){
+        var t=Math.min(1,(now-t0)/ms);
+        var x=from.x+(to.x-from.x)*t;
+        var y=from.y+(to.y-from.y)*t - arc*4*t*(1-t);
+        if(t<1){placeDot({x:snap(x),y:snap(y)});requestAnimationFrame(step);}
+        else{placeDot(to);if(done)done();}
+      })(t0);
+    }
+
+    var blinkTimer=null;
+    function startIdle(){
+      var b=false; pose(IDLE1);
+      blinkTimer=setInterval(function(){b=!b;pose(b?IDLE2:IDLE1);},1400);
+    }
+    function stopIdle(){if(blinkTimer){clearInterval(blinkTimer);blinkTimer=null;}}
+
+    function freeze(){
+      stopIdle(); pose(IDLE1);
+      restAtTarget();
+    }
+
+    if(reduced){
+      /* no animation: he just chills, the dot sits as the period */
+      window.addEventListener('resize',freeze);
+      if(document.readyState==='complete') freeze();
+      else window.addEventListener('load',freeze);
+      return;
+    }
+
+    window.addEventListener('beforeprint',function(){stopIdle();pose(IDLE1);});
+
+    function cycle(){
+      stopIdle();
+      pose(HOLD);
+      dotSize(5);
+      var hp=handPos(); placeDot({x:hp.x,y:hp.y-2*S});
+      setTimeout(function(){
+        pose(THROW);
+        /* straight line, no mercy */
+        fly(handPos(),targetPos(),240,0,function(){
+          var tp=targetPos();
+          restAtTarget();
+          splashAt(tp.x+2,tp.y+2);
+          startIdle();
+          setTimeout(function(){
+            stopIdle(); pose(IDLE1);
+            dotSize(5);
+            fly(targetPos(),handPos(),450,30,function(){
+              dot.style.display='none';
+              pose(HIT);
+              var hd=headPos();
+              splashAt(hd.x,hd.y);
+              setTimeout(cycle,800);
+            });
+          },3400);
+        });
+      },400);
+    }
+
+    if(document.readyState==='complete') setTimeout(cycle,600);
+    else window.addEventListener('load',function(){setTimeout(cycle,600);});
+  })();
+
+  /* ---- footer: dots drop onto the line, bounce, then get swept away ---- */
+  (function(){
+    var track = document.getElementById('sweep-track');
+    if(!track) return;
+    var walker = track.querySelector('.walker');
+    var S = 5; /* same pixel size as the character sprites */
+
+    /* one dot = one sprite pixel, drawn on the same grid */
+    var DOT = ['k'];
+    var POS = [0.22, 0.38, 0.54, 0.7, 0.86];
+
+    function debris(grid){
+      var cv = document.createElement('canvas');
+      cv.className='dust'; cv.setAttribute('aria-hidden','true');
+      var cols = grid[0].length, rows = grid.length;
+      cv.width = cols*S; cv.height = rows*S;
+      var ctx = cv.getContext('2d');
+      ctx.fillStyle = C.k;
+      for(var y=0;y<rows;y++)
+        for(var x=0;x<cols;x++)
+          if(grid[y][x] !== '.') ctx.fillRect(x*S, y*S, S, S);
+      return cv;
+    }
+
+    var items = [];
+    for(var i=0;i<POS.length;i++){
+      var s = debris(DOT);
+      track.appendChild(s);
+      items.push({el:s, frac:POS[i], x:0, state:'rest'});
+    }
+
+    function land(it){ /* sitting on the line, ready to be swept */
+      it.state='rest';
+      it.el.style.display='block';
+      it.el.style.left = it.x+'px';
+      it.el.style.bottom = '0px';
+    }
+    function place(){
+      var w = track.clientWidth;
+      for(var i=0;i<items.length;i++) items[i].x = Math.round(w*items[i].frac/S)*S;
+    }
+
+    /* dot falls from above the line and bounces twice before settling */
+    function drop(it, delay){
+      it.state='fall';
+      var gen = (it.gen = (it.gen||0) + 1);   /* newest drop wins */
+      var top = track.clientHeight - S;
+      it.el.style.display='block';
+      it.el.style.left = it.x+'px';
+      it.el.style.bottom = top+'px';
+      setTimeout(function(){
+        if(it.gen !== gen) return;
+        var y = top, v = 0, prev = null, bounces = 0;
+        var G = 2600, BOUNCE = 0.42;
+        requestAnimationFrame(function step(now){
+          if(it.gen !== gen || it.state !== 'fall') return;
+          if(prev === null) prev = now;
+          var dt = Math.min(0.034, (now-prev)/1000); prev = now;
+          v -= G*dt; y += v*dt;
+          if(y <= 0){
+            y = 0;
+            if(bounces >= 2 || -v < 90){ land(it); return; }
+            v = -v*BOUNCE; bounces++;
+          }
+          it.el.style.bottom = (Math.round(y/S)*S)+'px';
+          requestAnimationFrame(step);
+        });
+      }, delay);
+    }
+
+    function reset(){
+      place();
+      for(var i=0;i<items.length;i++){
+        if(reduced) land(items[i]);
+        else drop(items[i], 120 + i*170 + Math.random()*90);
+      }
+    }
+    reset();
+    window.addEventListener('resize', function(){
+      place();
+      for(var i=0;i<items.length;i++)
+        if(items[i].state==='rest') items[i].el.style.left = items[i].x+'px';
+    });
+    /* on paper every dot rests neatly on the line */
+    window.addEventListener('beforeprint', function(){
+      for(var i=0;i<items.length;i++) if(items[i].state!=='gone') land(items[i]);
+    });
+    if(reduced) return; /* dots just sit there, sweeper stands still */
+
+    function hop(it){
+      it.state='hop';
+      var from = it.x, to = from + 20 + Math.random()*16;
+      var t0 = performance.now(), dur = 260;
+      (function step(now){
+        var t = Math.min(1,(now-t0)/dur);
+        /* snap the hop to the 5px pixel grid for that chunky retro bounce */
+        it.el.style.left = (Math.round((from+(to-from)*t)/S)*S)+'px';
+        it.el.style.bottom = (Math.round((48*t*(1-t))/S)*S)+'px';
+        if(t<1) requestAnimationFrame(step);
+        else{
+          it.x = Math.round(to/S)*S; it.el.style.bottom='0px';
+          if(to > track.clientWidth-16){ it.el.style.display='none'; it.state='gone'; }
+          else it.state='rest';
+        }
+      })(t0);
+    }
+
+    var lastLeft = -Infinity;
+    (function watch(){
+      var tr = track.getBoundingClientRect();
+      var wr = walker.getBoundingClientRect();
+      var left = wr.left - tr.left;
+      if(left < lastLeft - 40) reset(); /* sweeper wrapped around — new dust */
+      lastLeft = left;
+      var broom = left + wr.width - 6;
+      for(var i=0;i<items.length;i++){
+        var it = items[i];
+        if(it.state==='rest' && broom >= it.x-3 && broom < it.x+34) hop(it);
+      }
+      requestAnimationFrame(watch);
+    })();
+  })();
 })();
 </script>
 </body>
