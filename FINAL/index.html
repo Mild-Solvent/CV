@@ -36,6 +36,7 @@
     --amber:#d08a2e;
     --rose:#b85c72;
     --violet:#6f639f;
+    --scene-col:118px;
     --px:'Press Start 2P',monospace;
     --body:'VT323',monospace;
   }
@@ -153,15 +154,22 @@
   }
 
   /* ---------- sections ---------- */
+  /* the text column takes only the width its lines actually use; all remaining
+     space becomes the character column, so each character sits centred in the
+     empty half of the row rather than pinned against the margin */
   .level{
-    display:grid;grid-template-columns:1fr auto;gap:10px 28px;
+    display:grid;
+    grid-template-columns:minmax(0,max-content) minmax(var(--scene-col),1fr);
+    gap:10px 28px;
     align-items:center;padding:26px 0 18px;
     border-bottom:2px dashed var(--mid);
   }
   .level:last-of-type{border-bottom:none}
-  .level.flip{grid-template-columns:auto 1fr}
+  .level.flip{grid-template-columns:minmax(var(--scene-col),1fr) minmax(0,max-content)}
   .level.flip .scene{order:-1}
   .level .txt{max-width:58ch}
+  /* mirrored rows: leftover slack goes between character and text, not at the margin */
+  .level.flip .txt{justify-self:end}
   .lvl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
   .lvl-tag{
     font-family:var(--px);font-size:7px;letter-spacing:1px;color:var(--paper);
@@ -205,6 +213,7 @@
     .sheet{padding:0 20px 28px}
     .level,.level.flip{grid-template-columns:1fr}
     .level.flip .scene{order:0}
+    .level.flip .txt{justify-self:start}
     .scene{justify-self:start}
     .statusbar{flex-wrap:wrap}
   }
@@ -318,7 +327,7 @@
         Proof I'll chase a weird idea all the way to something playable.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-slug" aria-label="pixel sea slug with mind-control waves"></canvas></div>
+    <div class="scene"><canvas id="spr-slug" aria-label="pixel sea slug with a crab beside it"></canvas></div>
   </section>
 
   <section class="level a">
@@ -378,7 +387,11 @@
 (function(){
   var C = {
     k:'#26281f', s:'#e6c096', h:'#d08a2e', b:'#4b87b8',
-    g:'#4e9c51', r:'#b85c72', w:'#f7f8ec', a:'#d08a2e', p:'#4b87b8'
+    g:'#4e9c51', r:'#b85c72', w:'#f7f8ec', a:'#d08a2e', p:'#4b87b8',
+    /* nudibranch: deep violet body, mid blue, pale ice cerata + rhinophores */
+    d:'#40397a', n:'#5b8fc9', i:'#a8d5ee',
+    /* the crab */
+    c:'#c0563f', e:'#8c3a2c'
   };
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var registry = [];
@@ -796,24 +809,32 @@
      '..............hh..']
   ], {scale:5, fps:2});
 
-  /* UE5 — sea slug with mind-control waves */
+  /* UE5 — the nudibranch: deep violet body, spiky ice-blue cerata along the
+     back, two tall rhinophores swaying. A crab keeps him company on the right.
+     Both sit on one baseline so the pair reads as a single scene. */
   sprite('spr-slug', [
-    ['..p...p...p...',
-     '..............',
-     '...k...k......',
-     '....k.k.......',
-     '..rrrrrrrr....',
-     '.rrrrrrrrrr...',
-     '.rrrrrrrrrrr..',
-     '..r.r.r.r.r...'],
-    ['..............',
-     '.p...p...p....',
-     '..k.....k.....',
-     '...k...k......',
-     '..rrrrrrrr....',
-     '.rrrrrrrrrr...',
-     '.rrrrrrrrrrr..',
-     '..r.r.r.r.r...']
+    ['.......ii..ii..........',
+     '.......ii..ii..........',
+     '........i..i...........',
+     '...i.i..n..n..i........',
+     '.i.n.ni.d..d..n........',
+     '.nininnidindini........',
+     '..ddddddddddddd...k.k..',
+     '.ddddddddddddddd.ccccc.',
+     '.dddddddddddddd.ccccccc',
+     '..nnnnnnnnnnnn..c.eee.c',
+     '...d..d..d..d....e.e.e.'],
+    ['........ii..ii.........',
+     '........ii..ii.........',
+     '.........i..i..........',
+     '...i.i...n..n.i........',
+     '.i.n.ni..d..d.n........',
+     '.inininnidindin........',
+     '..ddddddddddddd...k.k..',
+     '.dddddddddddddddccccccc',
+     '.dddddddddddddd..ccccc.',
+     '..nnnnnnnnnnnn....eee..',
+     '....d..d..d..d..e.e.e..']
   ], {scale:5, fps:3});
 
   /* AI agents — handing a gear to a robot */
