@@ -227,7 +227,10 @@
     .level p{font-size:17px}
     /* 50px = exactly the courier's height, so nothing gets clipped */
     .track{height:50px;margin:6px 0 3px}
-    /* the delivery scene freezes: courier mid-walk with the dot, block at rest */
+    /* the delivery scene freezes: courier mid-walk with the dot, block at rest.
+       The overlay is JS-sized for the screen, so pin it to the sheet on paper —
+       otherwise its leftover height pushes out a second, blank page. */
+    #scene1{top:0!important;bottom:0!important;height:auto!important}
     #scene1 .ring,#scene1 .lvl5{display:none!important}
     .inventory .slot{transform:none!important}
     .track .walker{animation:none;left:16%}
