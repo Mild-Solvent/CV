@@ -3,7 +3,7 @@ name: Deploy CV to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['FINAL/**']
+    paths: ['FINAL/**', '.github/workflows/deploy-cv.yml']
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # enablement: turns Pages on for the repo on the first run, so this
+      # works without visiting Settings -> Pages by hand
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: FINAL
