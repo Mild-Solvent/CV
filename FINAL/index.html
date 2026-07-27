@@ -327,7 +327,7 @@
         Proof I'll chase a weird idea all the way to something playable.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-slug" aria-label="pixel sea slug with a crab beside it"></canvas></div>
+    <div class="scene"><canvas id="spr-slug" aria-label="pixel sea slug and a crab dancing; the slug leaps on and mind-controls the crab off-frame, then they return"></canvas></div>
   </section>
 
   <section class="level a">
@@ -808,33 +808,208 @@
      '..............hh..']
   ], {scale:5, fps:2});
 
-  /* UE5 — the nudibranch: deep violet body, spiky ice-blue cerata along the
-     back, two tall rhinophores swaying. A crab keeps him company on the right.
-     Both sit on one baseline so the pair reads as a single scene. */
-  sprite('spr-slug', [
-    ['.......ii..ii..........',
-     '.......ii..ii..........',
-     '........i..i...........',
-     '...i.i..n..n..i........',
-     '.i.n.ni.d..d..n........',
-     '.nininnidindini........',
-     '..ddddddddddddd...k.k..',
-     '.ddddddddddddddd.ccccc.',
-     '.dddddddddddddd.ccccccc',
-     '..nnnnnnnnnnnn..c.eee.c',
-     '...d..d..d..d....e.e.e.'],
-    ['........ii..ii.........',
-     '........ii..ii.........',
-     '.........i..i..........',
-     '...i.i...n..n.i........',
-     '.i.n.ni..d..d.n........',
-     '.inininnidindin........',
-     '..ddddddddddddd...k.k..',
-     '.dddddddddddddddccccccc',
-     '.dddddddddddddd..ccccc.',
-     '..nnnnnnnnnnnn....eee..',
-     '....d..d..d..d..e.e.e..']
-  ], {scale:5, fps:3});
+  /* UE5 — LVL 2 scene: the nudibranch mind-controls the crab.
+     They bob in place → the slug leaps across and latches on → the possessed
+     crab scuttles off the right edge → the pair marches back in from the left →
+     the crab returns to its spot → the slug hops off and ambles home. Repeat.
+     Everything lives on one clipping "stage" canvas so off-frame just works,
+     and the stage keeps the old 23-col width so the layout never shifts.
+     d/n/i = slug violet/blue/ice cerata · c/e = crab shell/dark · k = eyes. */
+  (function(){
+    var cv = document.getElementById('spr-slug');
+    if(!cv) return;
+    var S = 5, COLS = 23, ROWS = 13;
+    cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+    var ctx = cv.getContext('2d');
+    var groundY = ROWS*S;
+
+    var SLUG = [
+      ['.......ii..ii..',
+       '.......ii..ii..',
+       '........i..i...',
+       '...i.i..n..n..i',
+       '.i.n.ni.d..d..n',
+       '.nininnidindini',
+       '..ddddddddddddd',
+       '.dddddddddddddd',
+       '.dddddddddddddd',
+       '..nnnnnnnnnnnn.',
+       '...d..d..d..d..'],
+      ['........ii..ii.',
+       '........ii..ii.',
+       '.........i..i..',
+       '...i.i...n..n.i',
+       '.i.n.ni..d..d.n',
+       '.inininnidindin',
+       '..ddddddddddddd',
+       '.dddddddddddddd',
+       '.dddddddddddddd',
+       '..nnnnnnnnnnnn.',
+       '....d..d..d..d.']
+    ];
+    var CRAB = [
+      ['e.......e',
+       'ec.k.k.ce',
+       '.ccccccc.',
+       'ccccccccc',
+       '.ccccccc.',
+       '.e.e.e.e.'],
+      ['e.......e',
+       'ec.k.k.ce',
+       '.ccccccc.',
+       'ccccccccc',
+       '.ccccccc.',
+       'e.e.e.e.e']
+    ];
+    /* slug curled onto the crab's back, control-waves pulsing overhead */
+    var RIDER = [
+      ['....i...i....',
+       '.....i.i.....',
+       '....ddddd....',
+       '...ddnnnddd..',
+       '...ddddddd...',
+       '....nnnnn....',
+       '..e.......e..',
+       '..ec.k.k.ce..',
+       '...ccccccc...',
+       '..ccccccccc..',
+       '...ccccccc...',
+       '...e.e.e.e...'],
+      ['...i...i.....',
+       '....i.i......',
+       '....ddddd....',
+       '..dddnnnddd..',
+       '...ddddddd...',
+       '....nnnnn....',
+       '..e.......e..',
+       '..ec.k.k.ce..',
+       '...ccccccc...',
+       '..ccccccccc..',
+       '...ccccccc...',
+       '..e.e.e.e.e..']
+    ];
+
+    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
+    function snap(v){ return Math.round(v/S)*S; }
+    function blit(grid, px, py){
+      for(var y=0;y<grid.length;y++){
+        var row = grid[y];
+        for(var x=0;x<row.length;x++){
+          var ch = row[x];
+          if(ch !== '.'){ ctx.fillStyle = C[ch] || C.k; ctx.fillRect(px+x*S, py+y*S, S, S); }
+        }
+      }
+    }
+
+    var SLUG_GH = 11, CRAB_GH = 6, RIDER_GH = 12;
+    var SLUG_HOME = 0;
+    var CRAB_HOME = (COLS-9)*S;           /* 70 — crab's right edge hugs the frame */
+    var RIDER_HOME = CRAB_HOME - 2*S;     /* 60 — puts the rider's crab back on CRAB_HOME */
+    var PERCH_X = 55, PERCH_TOP = -10;    /* where the leaping slug lands on the back */
+    var LAND_X = 40;                      /* where it drops back down on dismount */
+    function slugY(bob){ return groundY - SLUG_GH*S + bob; }
+    function crabY(bob){ return groundY - CRAB_GH*S + bob; }
+    function riderY(bob){ return groundY - RIDER_GH*S + bob; }
+
+    /* ---- per-phase painters ---- */
+    function drawDance(e){
+      clear();
+      var b = Math.floor(e/280) % 2;      /* opposite-phase bounce = dancing together */
+      blit(SLUG[b], SLUG_HOME, slugY(b?-S:0));
+      blit(CRAB[b?0:1], CRAB_HOME, crabY(b?0:-S));
+    }
+    function drawMount(e){
+      clear();
+      var t = Math.min(1, e/LEAP);
+      blit(CRAB[1], CRAB_HOME, crabY(0));            /* crab braces */
+      var sx  = snap(SLUG_HOME + (PERCH_X-SLUG_HOME)*t);
+      var top = slugY(0);
+      var arc = Math.sin(Math.PI*t) * 4*S;           /* up and over */
+      var sy  = snap(top + (PERCH_TOP-top)*t - arc);
+      blit(SLUG[Math.floor(e/120)%2], sx, sy);
+    }
+    function drawRide(x, e){
+      clear();
+      var b = Math.floor(e/150) % 2;
+      blit(RIDER[b], x, riderY(b?-S:0));             /* scuttling hop */
+    }
+    function drawRideStill(x, e){
+      clear();
+      var b = Math.floor(e/380) % 2;
+      blit(RIDER[0], x, riderY(b?-S:0));             /* parked, breathing */
+    }
+    function drawDismount(e){
+      clear();
+      var t = Math.min(1, e/HOP);
+      blit(CRAB[0], CRAB_HOME, crabY(0));
+      var sx = snap(PERCH_X + (LAND_X-PERCH_X)*t);
+      var sy = snap(PERCH_TOP + (slugY(0)-PERCH_TOP)*t - Math.sin(Math.PI*t)*3*S);
+      blit(SLUG[Math.floor(e/130)%2], sx, sy);
+    }
+    function drawWalkHome(x, e){
+      clear();
+      var b = Math.floor(e/180) % 2;
+      blit(CRAB[Math.floor(e/300)%2], CRAB_HOME, crabY(0));
+      blit(SLUG[b], x, slugY(b?-S:0));
+    }
+    function drawStatic(){
+      clear();
+      blit(SLUG[0], SLUG_HOME, slugY(0));
+      blit(CRAB[0], CRAB_HOME, crabY(0));
+    }
+
+    /* ---- timing ---- */
+    var DANCE=3000, LEAP=640, GAP=1100, SETTLE=750, HOP=520;
+    var RIDE_SPEED=72, WALK_SPEED=46;    /* px per second */
+    var OFF = COLS*S + 4, IN_START = -RIDER[0][0].length*S;
+
+    var phase='dance', t0=0, raf=null;
+    function go(p){ phase=p; t0=performance.now(); }
+
+    function frame(now){
+      var e = now - t0;
+      if(phase==='dance'){ drawDance(e); if(e>=DANCE) go('mount'); }
+      else if(phase==='mount'){ drawMount(e); if(e>=LEAP) go('rideout'); }
+      else if(phase==='rideout'){
+        var xo = snap(RIDER_HOME + RIDE_SPEED*(e/1000));
+        drawRide(xo, e);
+        if(xo > OFF) go('gap');
+      }
+      else if(phase==='gap'){ clear(); if(e>=GAP) go('ridein'); }
+      else if(phase==='ridein'){
+        var xi = snap(IN_START + RIDE_SPEED*(e/1000));
+        if(xi >= RIDER_HOME){ drawRide(RIDER_HOME, e); go('settle'); }
+        else drawRide(xi, e);
+      }
+      else if(phase==='settle'){ drawRideStill(RIDER_HOME, e); if(e>=SETTLE) go('hop'); }
+      else if(phase==='hop'){ drawDismount(e); if(e>=HOP) go('walk'); }
+      else if(phase==='walk'){
+        var xw = snap(LAND_X - WALK_SPEED*(e/1000));
+        if(xw <= SLUG_HOME){ drawWalkHome(SLUG_HOME, e); go('dance'); }
+        else drawWalkHome(xw, e);
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    drawDance(0);                 /* paint immediately so the stage never flashes blank */
+    if(reduced){ drawStatic(); return; }
+    go('dance');
+    raf = requestAnimationFrame(frame);
+
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
+    function thaw(){ if(!raf){ go('dance'); raf = requestAnimationFrame(frame); } }
+    window.addEventListener('beforeprint', freeze);
+    window.addEventListener('afterprint', thaw);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) freeze(); else thaw();
+    });
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var onMq = function(m){ if(m.matches) freeze(); else thaw(); };
+      if(mq.addEventListener) mq.addEventListener('change', onMq);
+      else if(mq.addListener) mq.addListener(onMq);
+    }
+  })();
 
   /* AI agents — handing a gear to a robot */
   sprite('spr-robot', [
