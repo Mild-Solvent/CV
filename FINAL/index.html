@@ -812,13 +812,14 @@
      They bob in place → the slug leaps across and latches on → the possessed
      crab scuttles off the right edge → the pair marches back in from the left →
      the crab returns to its spot → the slug hops off and ambles home. Repeat.
-     Everything lives on one clipping "stage" canvas so off-frame just works,
-     and the stage keeps the old 23-col width so the layout never shifts.
+     Everything lives on one clipping "stage" canvas so off-frame just works.
+     The stage is centred in its grid column (minmax .. 1fr), so it can be as
+     wide as it likes without nudging the text — the layout stays put.
      d/n/i = slug violet/blue/ice cerata · c/e = crab shell/dark · k = eyes. */
   (function(){
     var cv = document.getElementById('spr-slug');
     if(!cv) return;
-    var S = 5, COLS = 23, ROWS = 13;
+    var S = 5, COLS = 34, ROWS = 14;
     cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
     var ctx = cv.getContext('2d');
     var groundY = ROWS*S;
@@ -892,6 +893,7 @@
     function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
     function snap(v){ return Math.round(v/S)*S; }
     function blit(grid, px, py){
+      if(!grid) return;
       for(var y=0;y<grid.length;y++){
         var row = grid[y];
         for(var x=0;x<row.length;x++){
@@ -902,11 +904,11 @@
     }
 
     var SLUG_GH = 11, CRAB_GH = 6, RIDER_GH = 12;
-    var SLUG_HOME = 0;
-    var CRAB_HOME = (COLS-9)*S;           /* 70 — crab's right edge hugs the frame */
-    var RIDER_HOME = CRAB_HOME - 2*S;     /* 60 — puts the rider's crab back on CRAB_HOME */
-    var PERCH_X = 55, PERCH_TOP = -10;    /* where the leaping slug lands on the back */
-    var LAND_X = 40;                      /* where it drops back down on dismount */
+    var SLUG_HOME = 0;                    /* slug rests at the left of the frame */
+    var CRAB_HOME = (COLS-10)*S;          /* 120 — crab rests near the right, a gap between them */
+    var RIDER_HOME = CRAB_HOME - 2*S;     /* 110 — puts the rider's crab back on CRAB_HOME */
+    var PERCH_X = 105, PERCH_TOP = -10;   /* where the leaping slug lands on the back */
+    var LAND_X = 90;                      /* where it drops back down on dismount */
     function slugY(bob){ return groundY - SLUG_GH*S + bob; }
     function crabY(bob){ return groundY - CRAB_GH*S + bob; }
     function riderY(bob){ return groundY - RIDER_GH*S + bob; }
@@ -963,10 +965,15 @@
     var RIDE_SPEED=72, WALK_SPEED=46;    /* px per second */
     var OFF = COLS*S + 4, IN_START = -RIDER[0][0].length*S;
 
-    var phase='dance', t0=0, raf=null;
-    function go(p){ phase=p; t0=performance.now(); }
+    /* t0 is re-anchored to rAF's own clock on the first frame of every phase,
+       so `e` can never come out negative — a negative e used to index an
+       undefined pose right after clear() and leave the stage blank on some
+       page loads (the intermittent "sometimes it's gone on refresh" bug). */
+    var phase='dance', t0=null, raf=null;
+    function go(p){ phase=p; t0=null; }
 
     function frame(now){
+      if(t0===null) t0 = now;
       var e = now - t0;
       if(phase==='dance'){ drawDance(e); if(e>=DANCE) go('mount'); }
       else if(phase==='mount'){ drawMount(e); if(e>=LEAP) go('rideout'); }
