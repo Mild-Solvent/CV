@@ -203,11 +203,11 @@
 
   /* ---------- footer ---------- */
   .continue{
-    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;
     font-family:var(--px);font-size:9px;letter-spacing:1px;
     padding-top:18px;
   }
-  .continue .yes{color:var(--green)}
+  .continue a{color:var(--green);text-decoration:none}
 
   @media (max-width:620px){
     .sheet{padding:0 20px 28px}
@@ -377,8 +377,7 @@
   </div>
 
   <div class="continue">
-    <span>CONTINUE?</span>
-    <span><span class="yes">&#9658; YES</span>&nbsp;&nbsp;&nbsp;NO</span>
+    <a href="https://mild-solvent.github.io/CV/">CONTINUE?</a>
   </div>
 
 </div>
