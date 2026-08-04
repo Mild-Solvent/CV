@@ -896,6 +896,9 @@
     var CAR_WHEELS =
       ['...kkk......kkk...',
        '...kwk......kwk...'];
+    /* suspension compressed: tires squash flat and wide, body rides them down */
+    var CAR_WHEELS_SQ =
+      ['..kkkkk....kkkkk..'];
     var CW = 18, CH = 7;                    /* body 5 rows + wheels 2 */
     var LOCAL = { m:'#8f957c' };            /* exhaust-smoke grey-green */
     var BOX = ['hhhhh','eeeee','hhhhh','hhhhh'];        /* taped-up parcel */
@@ -953,11 +956,17 @@
     function vanY(){ return groundY - CH*S; }
     function boxY(){ return groundY - BOXH*S; }
 
-    /* body bounces one pixel on the tires — quick while rolling, lazy at idle */
+    /* funky suspension: the tires squash flat and the body rides them down,
+       so car and rubber never part company — quick while rolling, lazy at idle */
     function drawCar(x, e, moving){
-      var bounce = (Math.floor(e/(moving?160:420))%2) ? -S : 0;
-      blit(CAR_WHEELS, x, groundY - 2*S);
-      blit(CAR_BODY, x, vanY() + bounce);
+      var squish = Math.floor(e/(moving?160:420))%2;
+      if(squish){
+        blit(CAR_WHEELS_SQ, x, groundY - S);
+        blit(CAR_BODY, x, vanY() + S);
+      }else{
+        blit(CAR_WHEELS, x, groundY - 2*S);
+        blit(CAR_BODY, x, vanY());
+      }
     }
     /* exhaust put-puts out of the tailpipe (left end) and drifts up-left */
     function fumes(x, e){
