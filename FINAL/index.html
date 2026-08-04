@@ -312,7 +312,7 @@
         My longest-running project.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-plant" aria-label="pixel character watering a growing plant"></canvas></div>
+    <div class="scene"><canvas id="spr-plant" aria-label="pixel character checking his phone until a van delivers a package; he slaps it, FPV goggles and a controller appear, and he flies a drone around until it crashes"></canvas></div>
   </section>
 
   <section class="level b flip">
@@ -814,31 +814,319 @@
     }
   })();
 
-  /* gas.green — watering a plant */
-  sprite('spr-plant', [
-    ['..hhhh............',
-     '.hhhhhh...........',
-     '..skks............',
-     '..ssss..kk........',
-     '.bbbbbbskkk.......',
-     '..bbbb....k.......',
-     '..k..k....b...g...',
-     '.kk..kk...b..g.g..',
-     '..........b...g...',
-     '.............hhhh.',
-     '..............hh..'],
-    ['..hhhh............',
-     '.hhhhhh...........',
-     '..skks............',
-     '..ssss..kk........',
-     '.bbbbbbskkk.......',
-     '..bbbb....k.......',
-     '..k..k........g...',
-     '.kk..kk......ggg..',
-     '..............g...',
-     '.............hhhh.',
-     '..............hh..']
-  ], {scale:5, fps:2, stage:true});
+  /* gas.green — LVL 1 scene: the drone delivery.
+     He stands around → scrolls his phone → pockets it and waits → a green
+     van rolls in and drops a package off the back → he walks over and slaps
+     the box → FPV goggles, a controller and a drone spawn out of it → he
+     flies laps around the stage → the drone crashes in a puff of dust →
+     the gear vanishes (magic) and he strolls home to do it all again.
+     Same one-canvas clipping stage as LVL 2, everything on the S grid. */
+  (function(){
+    var cv = document.getElementById('spr-plant');
+    if(!cv) return;
+    var S = 5;
+    var ctx = cv.getContext('2d');
+
+    /* ---- the guy: 8 wide, 9 tall ---- */
+    var STAND =
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..skks..',
+       '..ssss..',
+       '.bbbbbb.',
+       '..bbbb..',
+       '..k..k..',
+       '..k..k..',
+       '.kk..kk.'];
+    var WALK = [STAND,
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..skks..',
+       '..ssss..',
+       '.bbbbbb.',
+       '..bbbb..',
+       '..k.k...',
+       '..k..k..',
+       '.kk.kk..']];
+    var PHONE_GUY =
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..skks..',
+       '..ssss.s',
+       '.bbbbbb.',
+       '..bbbb..',
+       '..k..k..',
+       '..k..k..',
+       '.kk..kk.'];
+    var SLAP =
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..skks..',
+       '..ssssss',
+       '.bbbbbb.',
+       '..bbbb..',
+       '..k..k..',
+       '..k..k..',
+       '.kk..kk.'];
+    /* goggles on, hands out front for the controller */
+    var PILOT =
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..sppppp',
+       '..ssss..',
+       '.bbbbbb.',
+       '..bbss..',
+       '..k..k..',
+       '..k..k..',
+       '.kk..kk.'];
+    var GH = 9, GW = 8;
+
+    /* ---- props ---- */
+    var PHONE = [['nn','nn','kk'], ['ii','ii','kk']];   /* screen blinks */
+    var CTRL  = [['kkk','akk'], ['kkk','kkk']];         /* pilot light blinks */
+    var VAN = [
+      ['.gggggggggg.....',
+       '.gggggggggg.....',
+       '.ggggggggggggww.',
+       '.ggggggggggggww.',
+       '.gggggggggggggg.',
+       '...kk.....kk....',
+       '...kk.....kk....'],
+      ['.gggggggggg.....',
+       '.gggggggggg.....',
+       '.ggggggggggggww.',
+       '.ggggggggggggww.',
+       '.gggggggggggggg.',
+       '...k.......k....',
+       '....k.......k...']
+    ];
+    var VW = 16, VH = 7;
+    var BOX = ['hhhhh','eeeee','hhhhh','hhhhh'];        /* taped-up parcel */
+    var BOXW = 5, BOXH = 4;
+    var DRONE = [
+      ['kkk...kkk',
+       '.k..a..k.',
+       '.kkkkkkk.',
+       '..k...k..'],
+      ['k.k...k.k',
+       '.k..k..k.',
+       '.kkkkkkk.',
+       '..k...k..']
+    ];
+    var DW = 9, DH = 4;
+    var WRECK =
+      ['......k..',
+       '.k....k..',
+       '..kkkkk..',
+       '.k.k..k..'];
+
+    function snap(v){ return Math.round(v/S)*S; }
+    function blit(grid, px, py){
+      if(!grid) return;
+      for(var y=0;y<grid.length;y++){
+        var row = grid[y];
+        for(var x=0;x<row.length;x++){
+          var ch = row[x];
+          if(ch !== '.'){ ctx.fillStyle = C[ch] || C.k; ctx.fillRect(px+x*S, py+y*S, S, S); }
+        }
+      }
+    }
+    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
+
+    /* ---- stage geometry: guy left, parcel right-of-centre, van exits right ---- */
+    var COLS, ROWS, groundY, GUY_HOME, PKG_X, SLAP_X, VAN_STOP, VAN_IN, VAN_OFF, flyCX, flyTopY;
+    function sizeStage(){
+      var d = stageSize(cv, S);
+      COLS = d.cols; ROWS = d.rows;
+      cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+      groundY = Math.max(GH+2, Math.round(ROWS*0.82))*S;
+      var home0 = Math.max(0, Math.round((COLS-36)/2))*S;
+      GUY_HOME = home0;
+      PKG_X    = home0 + 15*S;
+      SLAP_X   = PKG_X - 8*S;              /* slap arm just reaches the box */
+      VAN_STOP = PKG_X + 6*S;              /* parcel drops off the back doors */
+      VAN_IN   = -VW*S - 4;
+      VAN_OFF  = COLS*S + 4;
+      flyCX    = Math.round(COLS/2)*S;     /* the drone laps around mid-stage */
+      flyTopY  = Math.max(0, Math.round(ROWS*0.22))*S;
+    }
+    sizeStage();
+    function guyY(){ return groundY - GH*S; }
+    function vanY(){ return groundY - VH*S; }
+    function boxY(){ return groundY - BOXH*S; }
+
+    function drawGuy(pose, x){ blit(pose, x, guyY()); }
+    function drawPhoneGuy(x, e){
+      drawGuy(PHONE_GUY, x);
+      blit(PHONE[Math.floor(e/450)%2], x + 7*S, guyY() + 2*S);
+    }
+    function drawPilot(x, e){
+      drawGuy(PILOT, x);
+      blit(CTRL[Math.floor(e/400)%2], x + 6*S, guyY() + 5*S);
+    }
+    function walkPose(x){ return WALK[Math.floor(Math.abs(x)/11) % 2]; }
+    /* dust puff: a ring of amber + ink specks that widens as it settles */
+    function dust(cx, cy, r, big){
+      ctx.fillStyle = C.a;
+      ctx.fillRect(cx-r, cy-2*S, S, S); ctx.fillRect(cx+r, cy-2*S, S, S);
+      ctx.fillRect(cx, cy-r-2*S, S, S);
+      if(big){
+        ctx.fillStyle = C.k;
+        ctx.fillRect(cx-r-S, cy-S, S, S); ctx.fillRect(cx+r+S, cy-S, S, S);
+      }
+    }
+
+    /* ---- timing ---- */
+    var STAND_MS=1100, PHONE_MS=3200, POCKET_MS=1400, DROP_MS=800,
+        SLAP_MS=600, SPAWN_MS=700, FLY_MS=5400, CRASH_MS=650,
+        DUST_MS=900, FADE_MS=700;
+    var VAN_SPEED=110, WALK_SPEED=46;     /* px per second */
+
+    var phase='stand', t0=null, raf=null;
+    var vanX=0, guyX=0, droneAt=null;
+    function go(p){ phase=p; t0=null; }
+
+    function dronePos(e){
+      /* two out-of-sync sines = lazy loops around the stage */
+      var ax = Math.max(6*S, flyCX - 6*S);
+      var x = flyCX + Math.sin(e/820) * ax - (DW/2)*S;
+      var y = flyTopY + (Math.sin(e/540 + 1.2)*0.5 + 0.5) * (groundY - flyTopY - 9*S);
+      return { x: snap(x), y: snap(y) };
+    }
+
+    function frame(now){
+      if(t0===null) t0 = now;
+      var e = now - t0;
+
+      if(phase==='stand'){
+        clear(); drawGuy(STAND, GUY_HOME);
+        if(e>=STAND_MS) go('phone');
+      }
+      else if(phase==='phone'){
+        clear(); drawPhoneGuy(GUY_HOME, e);
+        if(e>=PHONE_MS) go('pocket');
+      }
+      else if(phase==='pocket'){                /* phone away, just waiting */
+        clear(); drawGuy(STAND, GUY_HOME);
+        if(e>=POCKET_MS) go('carin');
+      }
+      else if(phase==='carin'){
+        vanX = Math.min(VAN_STOP, snap(VAN_IN + VAN_SPEED*(e/1000)));
+        clear();
+        blit(VAN[Math.floor(e/90)%2], vanX, vanY());
+        drawGuy(STAND, GUY_HOME);
+        if(vanX >= VAN_STOP) go('drop');
+      }
+      else if(phase==='drop'){                  /* parcel tips off the back */
+        clear();
+        blit(VAN[0], VAN_STOP, vanY());
+        var t = Math.min(1, e/DROP_MS);
+        var fromY = vanY() + 1*S, y = snap(fromY + (boxY()-fromY)*(t*t));
+        blit(BOX, PKG_X, y);
+        drawGuy(STAND, GUY_HOME);
+        if(e>=DROP_MS+150) go('carout');
+      }
+      else if(phase==='carout'){
+        vanX = snap(VAN_STOP + VAN_SPEED*(e/1000));
+        clear();
+        blit(VAN[Math.floor(e/90)%2], vanX, vanY());
+        blit(BOX, PKG_X, boxY());
+        drawGuy(STAND, GUY_HOME);
+        if(vanX > VAN_OFF) go('walkto');
+      }
+      else if(phase==='walkto'){
+        guyX = Math.min(SLAP_X, snap(GUY_HOME + WALK_SPEED*(e/1000)));
+        clear();
+        blit(BOX, PKG_X, boxY());
+        drawGuy(walkPose(guyX), guyX);
+        if(guyX >= SLAP_X) go('slap');
+      }
+      else if(phase==='slap'){
+        clear();
+        blit(BOX, PKG_X, boxY());
+        var mid = e>150 && e<450;
+        drawGuy(mid ? SLAP : STAND, SLAP_X);
+        if(mid) dust(PKG_X + 2*S, boxY(), 2*S, false);   /* whack! */
+        if(e>=SLAP_MS) go('spawn');
+      }
+      else if(phase==='spawn'){                 /* box pops into flying gear */
+        clear();
+        if(Math.floor(e/120)%2) blit(BOX, PKG_X, boxY());
+        dust(PKG_X + 2*S, boxY(), 3*S, true);
+        drawPilot(SLAP_X, e);
+        if(e>=SPAWN_MS){ go('fly'); }
+      }
+      else if(phase==='fly'){
+        clear();
+        var d = dronePos(e);
+        droneAt = d;
+        blit(DRONE[Math.floor(e/80)%2], d.x, d.y);
+        drawPilot(SLAP_X, e);
+        if(e>=FLY_MS) go('crash');
+      }
+      else if(phase==='crash'){                 /* dead stick, straight down */
+        clear();
+        var t = Math.min(1, e/CRASH_MS);
+        var y = snap(droneAt.y + (groundY - DH*S - droneAt.y)*(t*t));
+        blit(DRONE[Math.floor(e/60)%2], droneAt.x, y);   /* props flailing */
+        drawPilot(SLAP_X, e);
+        if(t>=1) go('dust');
+      }
+      else if(phase==='dust'){
+        clear();
+        blit(WRECK, droneAt.x, groundY - DH*S);
+        dust(droneAt.x + 4*S, groundY, e<450 ? 2*S : 4*S, true);
+        drawPilot(SLAP_X, e);
+        if(e>=DUST_MS) go('fade');
+      }
+      else if(phase==='fade'){                  /* the gear vanishes, magically */
+        clear();
+        if(Math.floor(e/140)%2) blit(WRECK, droneAt.x, groundY - DH*S);
+        drawGuy(STAND, SLAP_X);
+        if(e>=FADE_MS) go('walkback');
+      }
+      else if(phase==='walkback'){
+        guyX = Math.max(GUY_HOME, snap(SLAP_X - WALK_SPEED*(e/1000)));
+        clear();
+        drawGuy(walkPose(guyX), guyX);
+        if(guyX <= GUY_HOME) go('stand');
+      }
+
+      raf = requestAnimationFrame(frame);
+    }
+
+    /* static frame for paper and reduced motion: mid-flight, best moment */
+    function drawStatic(){
+      clear();
+      drawGuy(PILOT, GUY_HOME + 4*S);
+      blit(CTRL[0], GUY_HOME + 10*S, guyY() + 5*S);
+      blit(DRONE[0], GUY_HOME + 20*S, flyTopY + 3*S);
+    }
+
+    clear(); drawGuy(STAND, GUY_HOME);   /* paint immediately, never blank */
+    if(reduced){ drawStatic(); return; }
+    go('stand');
+    raf = requestAnimationFrame(frame);
+
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
+    function thaw(){ if(!raf){ go('stand'); raf = requestAnimationFrame(frame); } }
+    var rsz = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(rsz);
+      rsz = setTimeout(function(){ sizeStage(); if(!raf) drawStatic(); }, 150);
+    });
+    window.addEventListener('beforeprint', freeze);
+    window.addEventListener('afterprint', thaw);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) freeze(); else thaw();
+    });
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var onMq = function(m){ if(m.matches) freeze(); else thaw(); };
+      if(mq.addEventListener) mq.addEventListener('change', onMq);
+      else if(mq.addListener) mq.addListener(onMq);
+    }
+  })();
 
   /* UE5 — LVL 2 scene: the nudibranch mind-controls the crab.
      They bob in place → the slug leaps across and latches on → the possessed
