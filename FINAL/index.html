@@ -920,7 +920,57 @@
        '..e.e.e.e.e..']
     ];
 
-    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
+    /* kelp on the open sand at both edges — it sways gently and stays put
+       while everyone swims off-frame, so the wide stage never reads as an
+       empty box with hard edges */
+    var WEED_TALL = [
+      ['.g...g.',
+       '.g..g..',
+       '..g.g..',
+       '..g..g.',
+       '.g...g.',
+       '.g..g..',
+       '..g.g..',
+       '..g.g..',
+       '..g.g..',
+       '.gg.gg.'],
+      ['..g.g..',
+       '.g...g.',
+       '.g..g..',
+       '..g.g..',
+       '..g..g.',
+       '.g...g.',
+       '.g..g..',
+       '..g.g..',
+       '..g.g..',
+       '.gg.gg.']
+    ];
+    var WEED_SHORT = [
+      ['..n..',
+       '.n.n.',
+       '.n.n.',
+       '..n.n',
+       '.n.n.',
+       '.nnn.'],
+      ['.n...',
+       '..n.n',
+       '.n.n.',
+       '.n.n.',
+       '..n.n',
+       '.nnn.']
+    ];
+    function weeds(){
+      var b = Math.floor(performance.now()/600)%2;
+      if(SLUG_HOME >= 10*S){                        /* open sand on the left */
+        blit(WEED_TALL[b], S, groundY - 10*S);
+        blit(WEED_SHORT[1-b], 8*S, groundY - 6*S);
+      }
+      if(COLS*S - (CRAB_HOME + 10*S) >= 10*S){      /* and on the right */
+        blit(WEED_TALL[1-b], COLS*S - 8*S, groundY - 10*S);
+        blit(WEED_SHORT[b], COLS*S - 13*S, groundY - 6*S);
+      }
+    }
+    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); weeds(); }
     function snap(v){ return Math.round(v/S)*S; }
     function blit(grid, px, py){
       if(!grid) return;
