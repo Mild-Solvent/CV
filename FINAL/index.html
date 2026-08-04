@@ -348,7 +348,7 @@
         makes LLMs actually useful.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-robot" aria-label="pixel character handing a gear to a small robot"></canvas></div>
+    <div class="scene"><canvas id="spr-robot" aria-label="pixel robot growing circuit traces that end in bubbles holding office-task icons: an envelope, a calendar, a bar chart and a document; data pulses travel along the traces"></canvas></div>
   </section>
 
   <section class="level r flip">
@@ -1429,25 +1429,263 @@
     }
   })();
 
-  /* AI agents — handing a gear to a robot */
-  sprite('spr-robot', [
-    ['..hhhh......a...',
-     '.hhhhhh.....k...',
-     '..skks....kkkkk.',
-     '..ssss....kwkwk.',
-     '.bbbbbb...kkkkk.',
-     '..bbbbs.h.kkkkk.',
-     '..k..k..hh.k.k..',
-     '.kk..kk....k.k..'],
-    ['..hhhh..........',
-     '.hhhhhh.....k...',
-     '..skks....kkkkk.',
-     '..ssss....kkkkk.',
-     '.bbbbbb...kkkkk.',
-     '..bbbbs.h.kkkkk.',
-     '..k..k..hh.k.k..',
-     '.kk..kk....k.k..']
-  ], {scale:5, fps:2, stage:true});
+  /* ---- LVL 3 scene: the agent wires up the office ----
+     The robot grows circuit traces out of itself, PCB-style — straight
+     runs, right-angle bends (marked with ink "via" dots) — one to each
+     corner of the stage. Every finished trace pops a bubble holding an
+     office-job icon: envelope (email), calendar (scheduling), bar chart
+     (reports), document (paperwork). Then it gets to work: data pulses
+     travel from the robot down the traces, and a bubble flashes each time
+     a pulse arrives. After a shift it powers down — bubbles pop off, the
+     traces retract — a beat of sleep, and it starts wiring again. */
+  (function(){
+    var cv = document.getElementById('spr-robot');
+    if(!cv) return;
+    var S = 5;
+    var ctx = cv.getContext('2d');
+
+    var BOT = [                  /* 5 wide, 8 tall, antenna on top */
+      '..a..',
+      '..k..',
+      'kkkkk',
+      'kwkwk',
+      'kkkkk',
+      'kkkkk',
+      '.k.k.',
+      '.k.k.'];
+
+    var ICONS = {
+      env: ['kkkkkkk',           /* envelope — flap folds to a tip */
+            'kk...kk',
+            'k.k.k.k',
+            'k..k..k',
+            'kkkkkkk'],
+      cal: ['.k...k.',           /* calendar — pegs, amber header */
+            'kkkkkkk',
+            'kaaaaak',
+            'k.....k',
+            'k.k.k.k',
+            'kkkkkkk'],
+      chart:['k......',          /* bar chart climbing off an axis */
+            'k.....g',
+            'k...a.g',
+            'k.b.a.g',
+            'k.b.a.g',
+            'kkkkkkk'],
+      doc:  ['kkkkkk.',          /* sheet with a dog-eared corner */
+            'k....kk',
+            'k.kk..k',
+            'k.....k',
+            'k.kkk.k',
+            'k.....k',
+            'kkkkkkk']
+    };
+    var BW = 11;                 /* bubble width; height = icon + frame */
+
+    var COLS, ROWS, RX, RY, bubbles, order;
+    function trace(pts){         /* orthogonal waypoints -> cell list + bends */
+      var cells = [], bends = [];
+      for(var i=1;i<pts.length;i++){
+        var x = pts[i-1][0], y = pts[i-1][1];
+        var tx = pts[i][0], ty = pts[i][1];
+        var dx = tx>x?1:(tx<x?-1:0), dy = ty>y?1:(ty<y?-1:0);
+        while(x!==tx || y!==ty){
+          if(i===1 || x!==pts[i-1][0] || y!==pts[i-1][1]) cells.push([x,y]);
+          x+=dx; y+=dy;
+        }
+        if(i<pts.length-1) bends.push([tx,ty]);
+      }
+      cells.push(pts[pts.length-1]);
+      return {cells:cells, bends:bends};
+    }
+    function bubble(icon, x, y){
+      var g = ICONS[icon];
+      return {g:g, x:x, y:y, w:BW, h:g.length+4,
+              cy:y+Math.floor((g.length+4)/2)};
+    }
+    function sizeStage(){
+      var d = stageSize(cv, S);
+      COLS = Math.max(32, d.cols); ROWS = Math.max(21, d.rows);
+      cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+      RX = Math.floor(COLS/2)-2;               /* robot body cols RX..RX+4 */
+      RY = Math.floor((ROWS-8)/2);
+      var top = 1, bot = ROWS-1;
+      bubbles = [
+        bubble('env',   COLS-BW-1, top),       /* NE: email */
+        bubble('doc',   1,         bot-11),    /* SW: paperwork */
+        bubble('chart', COLS-BW-1, bot-10),    /* SE: reports */
+        bubble('cal',   1,         top)        /* NW: scheduling */
+      ];
+      var sR = RX+5, sL = RX-1;                /* robot's side ports */
+      var eR = Math.min(sR+3, COLS-BW-2);      /* elbow columns */
+      var eL = Math.max(sL-3, BW+1);
+      bubbles[0].t = trace([[sR,RY+3],[eR,  RY+3],[eR,  bubbles[0].cy],[COLS-BW-2,bubbles[0].cy]]);
+      bubbles[1].t = trace([[sL,RY+5],[eL-1,RY+5],[eL-1,bubbles[1].cy],[BW+1,     bubbles[1].cy]]);
+      bubbles[2].t = trace([[sR,RY+5],[eR+1,RY+5],[eR+1,bubbles[2].cy],[COLS-BW-2,bubbles[2].cy]]);
+      bubbles[3].t = trace([[sL,RY+3],[eL,  RY+3],[eL,  bubbles[3].cy],[BW+1,     bubbles[3].cy]]);
+      order = [0,1,2,3];                       /* wiring order: NE, SW, SE, NW */
+    }
+    sizeStage();
+
+    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
+    function dot(c, cx, cy){ ctx.fillStyle = C[c] || C.k; ctx.fillRect(cx*S, cy*S, S, S); }
+    function blit(grid, cx, cy){
+      for(var y=0;y<grid.length;y++){
+        var row = grid[y];
+        for(var x=0;x<row.length;x++){
+          if(row[x] !== '.') dot(row[x], cx+x, cy+y);
+        }
+      }
+    }
+    function isBend(b, x, y){
+      for(var i=0;i<b.bends.length;i++)
+        if(b.bends[i][0]===x && b.bends[i][1]===y) return true;
+      return false;
+    }
+    function drawTrace(b, upto){             /* amber run, ink vias at bends */
+      var n = Math.min(b.t.cells.length, upto);
+      for(var i=0;i<n;i++){
+        var c = b.t.cells[i];
+        dot(isBend(b.t, c[0], c[1]) ? 'k' : 'a', c[0], c[1]);
+      }
+    }
+    function drawBubble(b, hot){             /* framed card, icon inside */
+      var x=b.x, y=b.y, w=b.w, h=b.h, fc = hot?'a':'k';
+      for(var i=1;i<w-1;i++){ dot(fc,x+i,y); dot(fc,x+i,y+h-1); }
+      for(var j=1;j<h-1;j++){ dot(fc,x,y+j); dot(fc,x+w-1,y+j); }
+      ctx.fillStyle = C.w;
+      ctx.fillRect((x+1)*S,(y+1)*S,(w-2)*S,(h-2)*S);
+      blit(b.g, x+2, y+2);
+    }
+    function drawBurst(b){                   /* pop! around the bubble's heart */
+      var cx = b.x+Math.floor(b.w/2), cy = b.y+Math.floor(b.h/2);
+      dot('k',cx-3,cy); dot('k',cx+3,cy); dot('k',cx,cy-3); dot('k',cx,cy+3);
+      dot('a',cx-2,cy-2); dot('a',cx+2,cy-2); dot('a',cx-2,cy+2); dot('a',cx+2,cy+2);
+    }
+    function drawBot(e, awake){
+      var g = BOT.slice();
+      if(!awake) g[0] = '.....';                       /* antenna dark */
+      else if((e%800) < 400) g[0] = '..k..';           /* blinking light */
+      if(awake && (e%2600) < 160) g[3] = 'kkkkk';      /* eye blink */
+      if(!awake) g[3] = 'k.k.k';                       /* eyes shut */
+      blit(g, RX, RY);
+    }
+
+    function drawStatic(){                   /* the PDF pose: fully wired */
+      clear();
+      for(var i=0;i<bubbles.length;i++){
+        drawTrace(bubbles[i], Infinity);
+        drawBubble(bubbles[i], false);
+      }
+      drawBot(0, true);
+    }
+
+    /* ---- timing ---- */
+    var GR = 28;                  /* trace growth, cells per second */
+    var POPT = 150;               /* burst flash before a bubble lands */
+    var WORK = 6800;              /* how long the pulses run */
+    var PULSE = 24;               /* pulse speed, cells per second */
+    var CYCLE = 1700, STAG = 420; /* pulse rhythm and per-trace stagger */
+    var WAKE = 600, REST = 900;
+
+    var starts = null, growTotal = 0;
+    function planGrowth(){
+      starts = []; var t = 0;
+      for(var i=0;i<order.length;i++){
+        starts.push(t);
+        t += (bubbles[order[i]].t.cells.length/GR)*1000 + POPT;
+      }
+      growTotal = t + 250;
+    }
+
+    var phase='wake', t0=null, raf=null;
+    function go(p){ phase=p; t0=null; }
+
+    function frame(now){
+      if(t0===null) t0 = now;
+      var e = now - t0, i, b, local;
+      if(phase==='wake'){
+        clear(); drawBot(e, true);
+        if(e>=WAKE){ planGrowth(); go('grow'); }
+      }
+      else if(phase==='grow'){
+        clear();
+        for(i=0;i<order.length;i++){
+          b = bubbles[order[i]]; local = e - starts[i];
+          if(local <= 0) continue;
+          var cellsIn = Math.floor(local/1000*GR);
+          drawTrace(b, cellsIn);
+          if(cellsIn >= b.t.cells.length){
+            var over = local - (b.t.cells.length/GR)*1000;
+            if(over < POPT) drawBurst(b);
+            else drawBubble(b, over < POPT+180);
+          }
+        }
+        drawBot(e, true);
+        if(e>=growTotal) go('work');
+      }
+      else if(phase==='work'){
+        clear();
+        for(i=0;i<bubbles.length;i++){
+          b = bubbles[i];
+          drawTrace(b, Infinity);
+          var pt = ((e - i*STAG) % CYCLE + CYCLE) % CYCLE;
+          var pos = Math.floor(pt/1000*PULSE);
+          var hot = pos >= b.t.cells.length && pos < b.t.cells.length + 4;
+          drawBubble(b, hot);
+          if(pos > 0 && pos < b.t.cells.length){
+            var c = b.t.cells[pos];
+            dot('k', c[0], c[1]);                      /* the data packet */
+          }
+        }
+        drawBot(e, true);
+        if(e>=WORK) go('sleep');
+      }
+      else if(phase==='sleep'){
+        clear();
+        var gone = Math.floor(e/120);                  /* bubbles pop off */
+        var shrink = Math.max(0, (e-620)/450);         /* then traces retract */
+        for(i=0;i<bubbles.length;i++){
+          b = bubbles[i];
+          var keep = Math.round(b.t.cells.length*(1-Math.min(1,shrink)));
+          drawTrace(b, keep);
+          if(i >= gone) drawBubble(b, false);
+          else if(i === gone-1 && e%120 < 90) drawBurst(b);
+        }
+        drawBot(e, e < 620);
+        if(e>=1150) go('rest');
+      }
+      else if(phase==='rest'){
+        clear(); drawBot(e, false);
+        if(e>=REST) go('wake');
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    drawStatic();                 /* paint immediately so the stage never flashes blank */
+    if(reduced) return;
+    go('wake');
+    raf = requestAnimationFrame(frame);
+
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
+    function thaw(){ if(!raf && !reduced){ go('wake'); raf = requestAnimationFrame(frame); } }
+    var rsz = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(rsz);
+      rsz = setTimeout(function(){ sizeStage(); if(!raf) drawStatic(); }, 150);
+    });
+    window.addEventListener('beforeprint', freeze);
+    window.addEventListener('afterprint', thaw);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) freeze(); else thaw();
+    });
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var onMq = function(m){ if(m.matches) freeze(); else thaw(); };
+      if(mq.addEventListener) mq.addEventListener('change', onMq);
+      else if(mq.addListener) mq.addListener(onMq);
+    }
+  })();
 
   /* LVL 4 scene: the light-bulb juggler.
      He tosses the bulb hand to hand over his head — arms sprout from his
