@@ -884,23 +884,20 @@
     /* ---- props ---- */
     var PHONE = [['nn','nn','kk'], ['ii','ii','kk']];   /* screen blinks */
     var CTRL  = [['kkk','akk'], ['kkk','kkk']];         /* pilot light blinks */
-    var VAN = [
-      ['.gggggggggg.....',
-       '.gggggggggg.....',
-       '.ggggggggggggww.',
-       '.ggggggggggggww.',
-       '.gggggggggggggg.',
-       '...kk.....kk....',
-       '...kk.....kk....'],
-      ['.gggggggggg.....',
-       '.gggggggggg.....',
-       '.ggggggggggggww.',
-       '.ggggggggggggww.',
-       '.gggggggggggggg.',
-       '...k.......k....',
-       '....k.......k...']
-    ];
-    var VW = 16, VH = 7;
+    /* the delivery car: blue sedan, glass all round, bumpers front and back.
+       Body and wheels are separate grids — the body bounces on its tires
+       (funky suspension) while the rubber stays planted on the road. */
+    var CAR_BODY =
+      ['......bbbbbbbb....',
+       '.....biiiibiiib...',
+       '....bbiiiibiiibb..',
+       '.bbbbbbbbbbbbbbbb.',
+       'wbbbbbbbbbbbbbbbbw'];
+    var CAR_WHEELS =
+      ['...kkk......kkk...',
+       '...kwk......kwk...'];
+    var CW = 18, CH = 7;                    /* body 5 rows + wheels 2 */
+    var LOCAL = { m:'#8f957c' };            /* exhaust-smoke grey-green */
     var BOX = ['hhhhh','eeeee','hhhhh','hhhhh'];        /* taped-up parcel */
     var BOXW = 5, BOXH = 4;
     var DRONE = [
@@ -927,33 +924,49 @@
         var row = grid[y];
         for(var x=0;x<row.length;x++){
           var ch = row[x];
-          if(ch !== '.'){ ctx.fillStyle = C[ch] || C.k; ctx.fillRect(px+x*S, py+y*S, S, S); }
+          if(ch !== '.'){ ctx.fillStyle = LOCAL[ch] || C[ch] || C.k; ctx.fillRect(px+x*S, py+y*S, S, S); }
         }
       }
     }
     function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
 
-    /* ---- stage geometry: guy left, parcel right-of-centre, van exits right ---- */
+    /* ---- stage geometry: guy left, parcel right-of-centre, car exits right.
+       The parked car must fit on-stage, so everything hangs off VAN_STOP. ---- */
     var COLS, ROWS, groundY, GUY_HOME, PKG_X, SLAP_X, VAN_STOP, VAN_IN, VAN_OFF, flyCX, flyTopY;
     function sizeStage(){
       var d = stageSize(cv, S);
       COLS = d.cols; ROWS = d.rows;
       cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
       groundY = Math.max(GH+2, Math.round(ROWS*0.82))*S;
-      var home0 = Math.max(0, Math.round((COLS-36)/2))*S;
+      var home0 = Math.max(0, Math.round((COLS-38)/2))*S;
       GUY_HOME = home0;
-      PKG_X    = home0 + 15*S;
+      VAN_STOP = Math.min(home0 + 20*S, COLS*S - CW*S);  /* parked = fully visible */
+      PKG_X    = VAN_STOP - 6*S;           /* parcel drops off the trunk */
       SLAP_X   = PKG_X - 8*S;              /* slap arm just reaches the box */
-      VAN_STOP = PKG_X + 6*S;              /* parcel drops off the back doors */
-      VAN_IN   = -VW*S - 4;
+      VAN_IN   = -CW*S - 4;
       VAN_OFF  = COLS*S + 4;
       flyCX    = Math.round(COLS/2)*S;     /* the drone laps around mid-stage */
       flyTopY  = Math.max(0, Math.round(ROWS*0.22))*S;
     }
     sizeStage();
     function guyY(){ return groundY - GH*S; }
-    function vanY(){ return groundY - VH*S; }
+    function vanY(){ return groundY - CH*S; }
     function boxY(){ return groundY - BOXH*S; }
+
+    /* body bounces one pixel on the tires — quick while rolling, lazy at idle */
+    function drawCar(x, e, moving){
+      var bounce = (Math.floor(e/(moving?160:420))%2) ? -S : 0;
+      blit(CAR_WHEELS, x, groundY - 2*S);
+      blit(CAR_BODY, x, vanY() + bounce);
+    }
+    /* exhaust put-puts out of the tailpipe (left end) and drifts up-left */
+    function fumes(x, e){
+      var t = Math.floor(e/160)%4;
+      ctx.fillStyle = LOCAL.m;
+      if(t>0) ctx.fillRect(x-2*S, groundY-3*S, S, S);
+      if(t>1) ctx.fillRect(x-3*S, groundY-5*S, S, S);
+      if(t>2) ctx.fillRect(x-5*S, groundY-6*S, S, S);
+    }
 
     function drawGuy(pose, x){ blit(pose, x, guyY()); }
     function drawPhoneGuy(x, e){
@@ -1013,13 +1026,15 @@
       else if(phase==='carin'){
         vanX = Math.min(VAN_STOP, snap(VAN_IN + VAN_SPEED*(e/1000)));
         clear();
-        blit(VAN[Math.floor(e/90)%2], vanX, vanY());
+        drawCar(vanX, e, true);
+        fumes(vanX, e);
         drawGuy(STAND, GUY_HOME);
         if(vanX >= VAN_STOP) go('drop');
       }
-      else if(phase==='drop'){                  /* parcel tips off the back */
+      else if(phase==='drop'){                  /* parcel tips off the trunk */
         clear();
-        blit(VAN[0], VAN_STOP, vanY());
+        drawCar(VAN_STOP, e, false);
+        fumes(VAN_STOP, e);                     /* idling put-put */
         var t = Math.min(1, e/DROP_MS);
         var fromY = vanY() + 1*S, y = snap(fromY + (boxY()-fromY)*(t*t));
         blit(BOX, PKG_X, y);
@@ -1029,7 +1044,8 @@
       else if(phase==='carout'){
         vanX = snap(VAN_STOP + VAN_SPEED*(e/1000));
         clear();
-        blit(VAN[Math.floor(e/90)%2], vanX, vanY());
+        drawCar(vanX, e, true);
+        fumes(vanX, e);
         blit(BOX, PKG_X, boxY());
         drawGuy(STAND, GUY_HOME);
         if(vanX > VAN_OFF) go('walkto');
