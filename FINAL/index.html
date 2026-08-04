@@ -221,15 +221,16 @@
   /* ---------- print: one A4 page, characters freeze in place ---------- */
   @page{size:A4;margin:0}
   @media print{
-    body{background:none;padding:0;margin:0}
+    /* the page keeps its checkerboard — paper looks like a game screenshot */
+    body{padding:0;margin:0}
     /* the thrown dot becomes a real period on paper */
     #thrown-dot,#splash-fx{display:none!important}
     .sr-dot{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
     /* 26mm top margin centres the ~242mm sheet on the 297mm page —
        if the sheet grows/shrinks a lot, retune this */
     .sheet{
-      max-width:none;width:192mm;margin:26mm auto 0;box-shadow:none;
-      padding:0 34px 10px;
+      max-width:none;width:189mm;margin:26mm auto 0;box-shadow:none;
+      padding:0 42px 10px;
     }
     .statusbar{padding:9px 0 6px;margin-bottom:10px}
     .intro{font-size:18px}
@@ -242,7 +243,7 @@
        The overlay is JS-sized for the screen, so pin it to the sheet on paper —
        otherwise its leftover height pushes out a second, blank page. */
     #scene1{top:0!important;bottom:0!important;height:auto!important}
-    #scene1 .ring,#scene1 .lvl5{display:none!important}
+    #scene1 .ring{display:none!important}
     .inventory .slot{transform:none!important}
     .track .walker{animation:none;left:16%}
     .track.slow .walker{left:60%}
@@ -786,13 +787,14 @@
       raf = requestAnimationFrame(frame);
     }
 
-    /* static fallbacks: reduced motion and paper both get him mid-stride */
+    /* static fallbacks: reduced motion and paper both get him centre stage,
+       mid-stride, carrying the LVL 5 tag the block spat out */
     function still(){
       layout();
-      x = snap(geo.w*0.16);
+      x = snap((geo.w - GW*S)/2);
       drawPose(x, WALK[0]);
-      showDotAtHands(x, WALK[0]);
-      badge.style.display='none';
+      dot.style.display='none';
+      showBadgeAtHands(x, WALK[0]);
       slot.style.transform='';
       rings[0].style.display='none'; rings[1].style.display='none';
     }
@@ -1125,12 +1127,12 @@
       raf = requestAnimationFrame(frame);
     }
 
-    /* static frame for paper and reduced motion: mid-flight, best moment */
+    /* static frame for paper and reduced motion: the slap — whack! */
     function drawStatic(){
       clear();
-      drawGuy(PILOT, GUY_HOME + 4*S);
-      blit(CTRL[0], GUY_HOME + 10*S, guyY() + 5*S);
-      blit(DRONE[0], GUY_HOME + 20*S, flyTopY + 3*S);
+      blit(BOX, PKG_X, boxY());
+      drawGuy(SLAP, SLAP_X);
+      dust(PKG_X + 2*S, boxY(), 2*S, false);
     }
 
     clear(); drawGuy(STAND, GUY_HOME);   /* paint immediately, never blank */
@@ -1934,7 +1936,8 @@
     function drawStatic(){
       clear();
       front(FACE.fwd, false, false);
-      bulb(APEXX, APEXY, 0, {glint:false});
+      /* now=0 lands inside the glint window, so the paper bulb sparkles */
+      bulb(APEXX, APEXY, 0);
     }
 
     /* ---- timing ---- */
