@@ -221,12 +221,14 @@
   /* ---------- print: one A4 page, characters freeze in place ---------- */
   @page{size:A4;margin:0}
   @media print{
-    body{background:none;padding:0}
+    body{background:none;padding:0;margin:0}
     /* the thrown dot becomes a real period on paper */
     #thrown-dot,#splash-fx{display:none!important}
     .sr-dot{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
+    /* 26mm top margin centres the ~242mm sheet on the 297mm page —
+       if the sheet grows/shrinks a lot, retune this */
     .sheet{
-      max-width:none;margin:4mm 9mm;box-shadow:none;
+      max-width:none;width:192mm;margin:26mm auto 0;box-shadow:none;
       padding:0 34px 10px;
     }
     .statusbar{padding:9px 0 6px;margin-bottom:10px}
@@ -247,6 +249,9 @@
     /* stages are JS-sized to the on-screen text, which is taller than the
        print text — cap them so sections can't grow and spill the page */
     .scene canvas{max-height:104px;width:auto!important}
+    /* the robot's stage is also wider than the print column — scale it
+       down proportionally so the circuit stays inside the sheet border */
+    #spr-robot{max-width:310px;height:auto!important}
     .edu{padding:7px 0 0;font-size:15px;gap:4px 20px}
     .continue{padding-top:6px}
   }
