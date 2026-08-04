@@ -244,6 +244,9 @@
     .inventory .slot{transform:none!important}
     .track .walker{animation:none;left:16%}
     .track.slow .walker{left:60%}
+    /* stages are JS-sized to the on-screen text, which is taller than the
+       print text — cap them so sections can't grow and spill the page */
+    .scene canvas{max-height:104px;width:auto!important}
     .edu{padding:7px 0 0;font-size:15px;gap:4px 20px}
     .continue{padding-top:6px}
   }
@@ -395,6 +398,19 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var registry = [];
 
+  /* measure a scene canvas's stage cell: as wide as its grid column,
+     as tall as the text block beside it */
+  function stageSize(el, scale){
+    var sec = el.closest('section');
+    var txt = sec.querySelector('.txt');
+    var tracks = getComputedStyle(sec).gridTemplateColumns.split(' ');
+    var idx = tracks.length < 2 ? 0 : (sec.className.indexOf('flip') >= 0 ? 0 : 1);
+    var w = parseFloat(tracks[idx]);
+    if(!w || w < 140) w = sec.clientWidth;
+    return { cols: Math.max(24, Math.floor(w/scale)),
+             rows: Math.max(12, Math.round(txt.offsetHeight/scale)) };
+  }
+
   function sprite(id, frames, opts){
     opts = opts || {};
     var scale = opts.scale || 4;
@@ -402,10 +418,19 @@
     var el = document.getElementById(id);
     if(!el) return;
     var rows = frames[0].length, cols = frames[0][0].length;
-    el.width = cols*scale; el.height = rows*scale;
-    el.style.width = (cols*scale)+'px';
     var ctx = el.getContext('2d');
-    var f = 0;
+    var f = 0, ox = 0, oy = 0;
+    function fit(){
+      if(opts.stage){          /* fill the cell, sprite centred in it */
+        var d = stageSize(el, scale);
+        el.width = d.cols*scale; el.height = d.rows*scale;
+        ox = Math.round((d.cols-cols)/2)*scale;
+        oy = Math.round((d.rows-rows)/2)*scale;
+      }else{
+        el.width = cols*scale; el.height = rows*scale;
+      }
+      el.style.width = el.width+'px';
+    }
     function draw(){
       ctx.clearRect(0,0,el.width,el.height);
       var fr = frames[f];
@@ -414,13 +439,20 @@
           var ch = fr[y][x];
           if(ch !== '.'){
             ctx.fillStyle = C[ch] || C.k;
-            ctx.fillRect(x*scale,y*scale,scale,scale);
+            ctx.fillRect(ox+x*scale,oy+y*scale,scale,scale);
           }
         }
       }
     }
-    draw();
+    fit(); draw();
     registry.push(function(){ f = 0; draw(); });
+    if(opts.stage){
+      var rs = null;
+      window.addEventListener('resize', function(){
+        clearTimeout(rs);
+        rs = setTimeout(function(){ fit(); draw(); }, 150);
+      });
+    }
     if(!reduced && frames.length > 1){
       setInterval(function(){ f=(f+1)%frames.length; draw(); }, 1000/fps);
     }
@@ -806,7 +838,7 @@
      '..............g...',
      '.............hhhh.',
      '..............hh..']
-  ], {scale:5, fps:2});
+  ], {scale:5, fps:2, stage:true});
 
   /* UE5 — LVL 2 scene: the nudibranch mind-controls the crab.
      They bob in place → the slug leaps across and latches on → the possessed
@@ -819,10 +851,8 @@
   (function(){
     var cv = document.getElementById('spr-slug');
     if(!cv) return;
-    var S = 5, COLS = 34, ROWS = 14;
-    cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+    var S = 5;
     var ctx = cv.getContext('2d');
-    var groundY = ROWS*S;
 
     var SLUG = [
       ['.......ii..ii..',
@@ -904,11 +934,23 @@
     }
 
     var SLUG_GH = 11, CRAB_GH = 6, RIDER_GH = 12;
-    var SLUG_HOME = 0;                    /* slug rests at the left of the frame */
-    var CRAB_HOME = (COLS-10)*S;          /* 120 — crab rests near the right, a gap between them */
-    var RIDER_HOME = CRAB_HOME - 2*S;     /* 110 — puts the rider's crab back on CRAB_HOME */
-    var PERCH_X = 105, PERCH_TOP = -10;   /* where the leaping slug lands on the back */
-    var LAND_X = 90;                      /* where it drops back down on dismount */
+    /* the stage fills its cell (see stageSize); the pair sits vertically
+       centred and every landmark tracks the stage edges */
+    var COLS, ROWS, groundY, SLUG_HOME, CRAB_HOME, RIDER_HOME, PERCH_X, PERCH_TOP, LAND_X, OFF, IN_START;
+    function sizeStage(){
+      var d = stageSize(cv, S);
+      COLS = d.cols; ROWS = d.rows;
+      cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+      groundY = Math.min(ROWS, Math.round(ROWS/2 + RIDER_GH/2))*S;
+      SLUG_HOME = 0;                      /* slug rests at the left of the frame */
+      CRAB_HOME = (COLS-10)*S;            /* crab rests near the right, a gap between them */
+      RIDER_HOME = CRAB_HOME - 2*S;       /* puts the rider's crab back on CRAB_HOME */
+      PERCH_X = CRAB_HOME - 3*S;          /* where the leaping slug lands on the back */
+      PERCH_TOP = groundY - 16*S;
+      LAND_X = CRAB_HOME - 6*S;           /* where it drops back down on dismount */
+      OFF = COLS*S + 4; IN_START = -RIDER[0][0].length*S;
+    }
+    sizeStage();
     function slugY(bob){ return groundY - SLUG_GH*S + bob; }
     function crabY(bob){ return groundY - CRAB_GH*S + bob; }
     function riderY(bob){ return groundY - RIDER_GH*S + bob; }
@@ -963,7 +1005,6 @@
     /* ---- timing ---- */
     var DANCE=3000, LEAP=640, GAP=1100, SETTLE=750, HOP=520;
     var RIDE_SPEED=72, WALK_SPEED=46;    /* px per second */
-    var OFF = COLS*S + 4, IN_START = -RIDER[0][0].length*S;
 
     /* t0 is re-anchored to rAF's own clock on the first frame of every phase,
        so `e` can never come out negative — a negative e used to index an
@@ -1005,6 +1046,11 @@
 
     function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
     function thaw(){ if(!raf){ go('dance'); raf = requestAnimationFrame(frame); } }
+    var rsz = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(rsz);
+      rsz = setTimeout(function(){ sizeStage(); if(!raf) drawStatic(); }, 150);
+    });
     window.addEventListener('beforeprint', freeze);
     window.addEventListener('afterprint', thaw);
     document.addEventListener('visibilitychange', function(){
@@ -1036,7 +1082,7 @@
      '..bbbbs.h.kkkkk.',
      '..k..k..hh.k.k..',
      '.kk..kk....k.k..']
-  ], {scale:5, fps:2});
+  ], {scale:5, fps:2, stage:true});
 
   /* LVL 4 scene: the light-bulb juggler.
      He tosses the bulb hand to hand over his head — arms sprout from his
@@ -1117,12 +1163,8 @@
        beside it, so the whole cell is breathing room for the chase */
     var COLS, ROWS, groundY, GUYTOP, GX, HANDY, LHX, RHX, APEXX, APEXY, CHASEY, OFFL, OFFR;
     function sizeStage(){
-      var sec = cv.closest('section');
-      var txt = sec.querySelector('.txt');
-      var track = parseFloat(getComputedStyle(sec).gridTemplateColumns);
-      var cellW = (track && track > 140) ? track : sec.clientWidth;
-      COLS = Math.max(24, Math.floor(cellW/S));
-      ROWS = Math.max(18, Math.round(txt.offsetHeight/S));
+      var d = stageSize(cv, S);
+      COLS = d.cols; ROWS = Math.max(18, d.rows);
       cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
       groundY = ROWS*S;
       /* centred vertically (clamped so the juggle arc stays in frame) —
