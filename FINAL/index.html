@@ -353,17 +353,17 @@
       <div class="lvl-head">
         <span class="lvl-tag">LVL 4</span>
         <!-- ✏️ EDIT: project 4 title + chip -->
-        <h2>FRONTENDS + ????</h2>
+        <h2>SIDEQUESTS</h2>
         <span class="chip">NDA</span>
       </div>
       <!-- ✏️ EDIT: project 4 description -->
       <p>
-        A stack of frontends &mdash; landing pages, dashboards, small web apps &mdash;
-        plus several projects I can't show here (NDA).
-        Stackig loadout I got by building them.
+        End-to-end encrypted P2P text &amp; location sharing app,
+        a family-business web, a trail-guide site (aktivity.ceaeurope.sk)
+        &mdash; plus smaller quests picked up along the way.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-spy" aria-label="pixel spy character next to redacted bars"></canvas></div>
+    <div class="scene"><canvas id="spr-bulb" aria-label="pixel character juggling a light bulb; it flies off and he chases it across the stage before strolling back with it"></canvas></div>
   </section>
 
   <div class="track slow" id="sweep-track" role="presentation">
@@ -1038,25 +1038,253 @@
      '.kk..kk....k.k..']
   ], {scale:5, fps:2});
 
-  /* NDA — spy beside redacted bars */
-  sprite('spr-spy', [
-    ['..kkkk..........',
-     '.kkkkkk..kkkkkk.',
-     '..kkkk..........',
-     '..ssss...kkkk...',
-     '.kkkkkk.........',
-     '.kkkkkk..kkkkk..',
-     '..k..k..........',
-     '.kk..kk.........'],
-    ['..kkkk..........',
-     '.kkkkkk..kkkkkk.',
-     '..kwkk..........',
-     '..ssss...kkkk...',
-     '.kkkkkk.........',
-     '.kkkkkk..kkkkk..',
-     '..k..k..........',
-     '.kk..kk.........']
-  ], {scale:5, fps:1});
+  /* LVL 4 scene: the light-bulb juggler.
+     He tosses the bulb hand to hand over his head — arms sprout from his
+     shoulders and the catching hand springs down under the weight. On the
+     sixth toss the bulb freezes at the apex for a beat (comic-book burst),
+     then bolts straight up and out of frame trailing speed lines. He looks
+     around, confused, then sprints off after it. The two of them tear
+     across the stage Scooby-Doo style — in from the right, back in from
+     the left — a beat of empty stage (he catches it somewhere off to the
+     right), and he strolls calmly back in, bulb bobbing in his hand, and
+     starts the whole game over. The bulb winks with little sparks every
+     few seconds. */
+  (function(){
+    var cv = document.getElementById('spr-bulb');
+    if(!cv) return;
+    var S = 5, COLS = 34, ROWS = 18;
+    cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+    var ctx = cv.getContext('2d');
+    var groundY = ROWS*S;
+
+    var BODY = [                 /* facing us, arms drawn separately */
+      '..........',
+      '..hhhh....',
+      '.hhhhhh...',
+      '..skks....',
+      '..ssss....',
+      '.bbbbbb...',
+      '..bbbb....',
+      '..bbbb....',
+      '..k..k....',
+      '..kk.kk...'];
+    var FACE = { fwd:'..skks....', blink:'..ssss....',
+                 left:'..kkss....', right:'..sskk....' };
+    /* arms grow out of the shoulders; raised, or dipped by the catch */
+    var ARM_UP_L  = [[0,4],[0,3],[0,2],[0,1],[1,0]];
+    var ARM_UP_R  = [[7,4],[7,3],[7,2],[7,1],[8,0]];
+    var ARM_DIP_L = [[0,4],[0,3],[0,2],[1,1]];
+    var ARM_DIP_R = [[7,4],[7,3],[7,2],[8,1]];
+    var RUN = [                  /* side view, facing right */
+      ['..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..k..k....',
+       '..kk.kk...'],
+      ['..........',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '.kk...kk..']
+    ];
+    var BULB = [
+      '.hh.',
+      'hwhh',
+      'hhhh',
+      '.kk.',                    /* threaded screw: two black steps */
+      '.kk.'];
+    var BH = 5;                  /* bulb height in cells */
+    var GLINT = [[-2,1],[5,1],[0,-2],[3,-2]];              /* spark pixels */
+    var BURST = [[-2,2],[5,2],[0,-2],[3,-2],[-1,0],[4,0]]; /* comic pop */
+    var LINES = [[0,5],[0,6],[3,5],[3,6],[1,7],[2,7]];     /* speed trail */
+    function flip(g){
+      var out = [];
+      for(var i=0;i<g.length;i++) out.push(g[i].split('').reverse().join(''));
+      return out;
+    }
+    var RUNL = [flip(RUN[0]), flip(RUN[1])];
+
+    var GH = 10, GW = 10*S;
+    var GUYTOP = groundY - GH*S;
+    var GX = Math.round(COLS/2 - 5)*S;      /* parked centre stage */
+    var HANDY = GUYTOP - BH*S;              /* bulb resting on a raised hand */
+    var LHX = GX, RHX = GX + 7*S;           /* bulb x over left / right hand */
+    var APEXX = GX + 3*S;                   /* bulb x right over his head */
+    var APEXY = HANDY - 3*S;
+    var CHASEY = GUYTOP - S;                /* flight height during the chase */
+
+    function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
+    function snap(v){ return Math.round(v/S)*S; }
+    function blit(grid, px, py){
+      for(var y=0;y<grid.length;y++){
+        var row = grid[y];
+        for(var x=0;x<row.length;x++){
+          var ch = row[x];
+          if(ch !== '.'){ ctx.fillStyle = C[ch] || C.k; ctx.fillRect(px+x*S, py+y*S, S, S); }
+        }
+      }
+    }
+    function dot(c, x, y){ ctx.fillStyle = C[c] || C.k; ctx.fillRect(x, y, S, S); }
+    function guy(pose, x){ blit(pose, snap(x), GUYTOP); }
+    function front(face, dipL, dipR, arms){
+      var g = BODY.slice(); g[3] = face;
+      blit(g, GX, GUYTOP);
+      if(arms !== false){
+        var list = (dipL?ARM_DIP_L:ARM_UP_L).concat(dipR?ARM_DIP_R:ARM_UP_R);
+        for(var i=0;i<list.length;i++) dot('s', GX+list[i][0]*S, GUYTOP+list[i][1]*S);
+      }
+    }
+    function fx(pixels, c, bx, by){
+      for(var i=0;i<pixels.length;i++) dot(c, bx+pixels[i][0]*S, by+pixels[i][1]*S);
+    }
+    function bulb(x, y, now, o){
+      o = o || {};
+      x = snap(x); y = snap(y);
+      blit(BULB, x, y);
+      if(o.glint !== false && (now % 2600) < 190) fx(GLINT, 'h', x, y);
+      if(o.burst) fx(BURST, 'k', x, y);
+      if(o.lines) fx(LINES, 'k', x, y);
+    }
+    function blinkFace(e){ return (e%2200) < 160 ? FACE.blink : FACE.fwd; }
+
+    /* one toss: even tosses go left hand -> right hand, odd go back.
+       Each toss opens with a short "dip": the catching hand springs down
+       under the bulb's weight before the next throw. */
+    var TOSS = 640, DIP = 140;
+    function tossPos(i, t){
+      var from = (i%2===0) ? LHX : RHX, to = (i%2===0) ? RHX : LHX;
+      return { x: from + (to-from)*t,
+               y: HANDY - Math.sin(Math.PI*t)*3*S };   /* over his head */
+    }
+
+    function drawStatic(){
+      clear();
+      front(FACE.fwd, false, false);
+      bulb(APEXX, APEXY, 0, {glint:false});
+    }
+
+    /* ---- timing ---- */
+    var THROWS = 5;                    /* clean catches before it escapes */
+    var HANG = 230, UP = 430, CONFUSED = 1050, GAP1 = 350, GAP2 = 300, PAUSE = 1300;
+    var RUN_SPEED = 95, CHASE_SPEED = 120, STROLL_SPEED = 45;   /* px per second */
+    var LEAD = 26;                     /* how far the bulb flies ahead of him */
+    var OFFL = -GW - 6, OFFR = COLS*S + 6;
+
+    var phase='juggle', t0=null, raf=null;
+    function go(p){ phase=p; t0=null; }
+
+    function frame(now){
+      if(t0===null) t0 = now;
+      var e = now - t0;
+      if(phase==='juggle'){
+        var i = Math.floor(e/TOSS);
+        if(i >= THROWS){ go('lastup'); }
+        else{
+          var local = e % TOSS, dip = local < DIP, fromL = (i%2===0);
+          clear();
+          front(blinkFace(e), dip && fromL, dip && !fromL);
+          if(dip) bulb(fromL?LHX:RHX, HANDY + S, now);
+          else{
+            var p1 = tossPos(i, (local-DIP)/(TOSS-DIP));
+            bulb(p1.x, p1.y, now);
+          }
+        }
+      }
+      else if(phase==='lastup'){       /* sixth toss only makes it to the apex... */
+        clear();
+        var dip6 = e < DIP;
+        front(blinkFace(e), false, dip6);
+        if(dip6) bulb(RHX, HANDY + S, now);
+        else{
+          var t = Math.min(1, (e-DIP)/(TOSS/2));
+          var p2 = tossPos(THROWS, t*0.5);
+          bulb(p2.x, p2.y, now);
+          if(t>=1) go('hang');
+        }
+      }
+      else if(phase==='hang'){         /* ...freezes there for a beat... */
+        clear();
+        front(FACE.fwd, false, false);
+        bulb(APEXX, APEXY, now, {burst:true, glint:false});
+        if(e>=HANG) go('up');
+      }
+      else if(phase==='up'){           /* ...then bolts, trailing speed lines */
+        clear();
+        front(FACE.fwd, false, false);
+        bulb(APEXX, APEXY - (e/UP)*9*S, now, {lines:true, glint:false});
+        if(e>=UP) go('confused');
+      }
+      else if(phase==='confused'){     /* where did it go? looks left, right */
+        clear();
+        var look = e < 380 ? FACE.left : (e < 760 ? FACE.right : FACE.left);
+        front(look, false, false, false);
+        if(e>=CONFUSED) go('runoff');
+      }
+      else if(phase==='runoff'){       /* sprints off after it */
+        var xr = GX - RUN_SPEED*(e/1000);
+        clear(); guy(RUNL[Math.floor(e/110)%2], xr);
+        if(xr < OFFL) go('gap1');
+      }
+      else if(phase==='gap1'){ clear(); if(e>=GAP1) go('chase1'); }
+      else if(phase==='chase1'){       /* right to left, bulb in the lead */
+        var b1 = OFFR - CHASE_SPEED*(e/1000);
+        clear();
+        bulb(b1, CHASEY + (Math.floor(e/160)%2 ? S : 0), now);
+        guy(RUNL[Math.floor(e/90)%2], b1 + 4*S + LEAD - 20);
+        if(b1 + 4*S + LEAD - 20 < OFFL) go('gap2');
+      }
+      else if(phase==='gap2'){ clear(); if(e>=GAP2) go('chase2'); }
+      else if(phase==='chase2'){       /* back the other way */
+        var b2 = OFFL + CHASE_SPEED*(e/1000);
+        clear();
+        bulb(b2, CHASEY + (Math.floor(e/160)%2 ? S : 0), now);
+        guy(RUN[Math.floor(e/90)%2], b2 - LEAD - GW + 20);
+        if(b2 - LEAD - GW + 20 > OFFR) go('pause');
+      }
+      else if(phase==='pause'){ clear(); if(e>=PAUSE) go('walkin'); }
+      else if(phase==='walkin'){       /* caught it — strolls back in with it */
+        var xw = OFFR - STROLL_SPEED*(e/1000);
+        clear();
+        if(xw <= GX){ guy(RUNL[0], GX); bulb(GX - 3*S, GUYTOP + 2*S, now); go('juggle'); }
+        else{
+          var step = Math.floor(e/260)%2;
+          guy(RUNL[step], xw);
+          /* held in his front hand, so it bobs with every stride */
+          bulb(xw - 3*S, GUYTOP + 2*S + (step?S:0), now);
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    drawStatic();                 /* paint immediately so the stage never flashes blank */
+    if(reduced) return;
+    go('juggle');
+    raf = requestAnimationFrame(frame);
+
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
+    function thaw(){ if(!raf){ go('juggle'); raf = requestAnimationFrame(frame); } }
+    window.addEventListener('beforeprint', freeze);
+    window.addEventListener('afterprint', thaw);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) freeze(); else thaw();
+    });
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var onMq = function(m){ if(m.matches) freeze(); else thaw(); };
+      if(mq.addEventListener) mq.addEventListener('change', onMq);
+      else if(mq.addListener) mq.addListener(onMq);
+    }
+  })();
 
   /* footer sweeper */
   sprite('spr-sweep', [
