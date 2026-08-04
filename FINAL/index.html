@@ -1454,6 +1454,46 @@
       '.k.k.',
       '.k.k.'];
 
+    /* our guy — side view, facing right; arms reach forward */
+    var GUY = [
+      ['..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '..k..k....',
+       '..kk.kk...'],
+      ['..........',
+       '..hhhh....',
+       '.hhhhhh...',
+       '..skks....',
+       '..ssss....',
+       '.bbbbbbsss',
+       '..bbbb....',
+       '..bbbb....',
+       '..k..k....',
+       '.kk...kk..']
+    ];
+    function flip(g){
+      var out = [];
+      for(var i=0;i<g.length;i++) out.push(g[i].split('').reverse().join(''));
+      return out;
+    }
+    var GUYL = [flip(GUY[0]), flip(GUY[1])];
+
+    /* the task sheet he writes and feeds to the agent */
+    var PAPER = [
+      'kkkkkk',
+      'kwwwwk',
+      'kwwwwk',
+      'kwwwwk',
+      'kkkkkk'];
+    /* pen strokes appear in this order — three scrawled lines */
+    var SCRIB = [[1,1],[2,1],[3,1],[4,1],[1,2],[2,2],[3,2],[1,3],[2,3],[3,3],[4,3]];
+
     var ICONS = {
       env: ['kkkkkkk',           /* envelope — flap folds to a tip */
             'kk...kk',
@@ -1524,7 +1564,12 @@
       bubbles[2].t = trace([[sR,RY+5],[eR+1,RY+5],[eR+1,bubbles[2].cy],[COLS-BW-2,bubbles[2].cy]]);
       bubbles[3].t = trace([[sL,RY+3],[eL,  RY+3],[eL,  bubbles[3].cy],[BW+1,     bubbles[3].cy]]);
       order = [0,1,2,3];                       /* wiring order: NE, SW, SE, NW */
+      GY  = RY - 2;                            /* guy's feet share the robot's floor */
+      DX  = RX - 13;                           /* standing spot: paper edge kisses the slot */
+      WX  = Math.max(0, RX - 16);              /* where he stops to write */
+      OFFX = -12;                              /* fully off the left edge */
     }
+    var GY, DX, WX, OFFX;
     sizeStage();
 
     function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
@@ -1570,6 +1615,19 @@
       if(!awake) g[3] = 'k.k.k';                       /* eyes shut */
       blit(g, RX, RY);
     }
+    function drawGuy(frames, e, x){
+      blit(frames[Math.floor(e/110)%2], Math.round(x), GY);
+    }
+    function drawPaper(px, py, strokes, clipX){
+      var x, y;
+      for(y=0;y<PAPER.length;y++)
+        for(x=0;x<PAPER[y].length;x++)
+          if(clipX === undefined || px+x < clipX) dot(PAPER[y][x], px+x, py+y);
+      for(var s=0;s<strokes && s<SCRIB.length;s++){
+        var sx = px+SCRIB[s][0];
+        if(clipX === undefined || sx < clipX) dot('k', sx, py+SCRIB[s][1]);
+      }
+    }
 
     function drawStatic(){                   /* the PDF pose: fully wired */
       clear();
@@ -1586,7 +1644,9 @@
     var WORK = 6800;              /* how long the pulses run */
     var PULSE = 24;               /* pulse speed, cells per second */
     var CYCLE = 1700, STAG = 420; /* pulse rhythm and per-trace stagger */
-    var WAKE = 600, REST = 900;
+    var REST = 900;
+    var WSPD = 12;                /* his walking speed, cells per second */
+    var WRITE_MS = 200*SCRIB.length + 420;
 
     var starts = null, growTotal = 0;
     function planGrowth(){
@@ -1597,32 +1657,71 @@
       }
       growTotal = t + 250;
     }
+    function drawGrowth(gE){      /* the traces, on their own clock */
+      for(var i=0;i<order.length;i++){
+        var b = bubbles[order[i]], local = gE - starts[i];
+        if(local <= 0) continue;
+        var cellsIn = Math.floor(local/1000*GR);
+        drawTrace(b, cellsIn);
+        if(cellsIn >= b.t.cells.length){
+          var over = local - (b.t.cells.length/GR)*1000;
+          if(over < POPT) drawBurst(b);
+          else drawBubble(b, over < POPT+180);
+        }
+      }
+    }
 
-    var phase='wake', t0=null, raf=null;
+    var phase='walkin', t0=null, raf=null, growT0=0;
     function go(p){ phase=p; t0=null; }
 
     function frame(now){
       if(t0===null) t0 = now;
-      var e = now - t0, i, b, local;
-      if(phase==='wake'){
-        clear(); drawBot(e, true);
-        if(e>=WAKE){ planGrowth(); go('grow'); }
+      var e = now - t0, i, b, x;
+      if(phase==='walkin'){         /* he arrives with a blank sheet */
+        clear(); drawBot(e, false);
+        x = Math.min(WX, OFFX + WSPD*e/1000);
+        drawGuy(GUY, e, x);
+        drawPaper(Math.round(x)+7, GY+4, 0);
+        if(x>=WX) go('write');
+      }
+      else if(phase==='write'){     /* scribbles the task list */
+        clear(); drawBot(e, false);
+        blit(GUY[0], WX, GY);
+        var n = Math.floor(e/200);
+        drawPaper(WX+7, GY+4, n);
+        if(n < SCRIB.length)        /* pen rides just above the current mark */
+          dot('s', WX+7+SCRIB[n][0], GY+3+SCRIB[n][1]);
+        if(e>=WRITE_MS) go('deliver');
+      }
+      else if(phase==='deliver'){   /* carries it over to the agent */
+        clear(); drawBot(e, false);
+        x = Math.min(DX, WX + WSPD*e/1000);
+        drawGuy(GUY, e, x);
+        drawPaper(Math.round(x)+7, GY+4, SCRIB.length);
+        if(x>=DX) go('insert');
+      }
+      else if(phase==='insert'){    /* the sheet slides in; the agent boots */
+        clear();
+        var step = Math.floor(e/120);
+        var fed = step >= 6;
+        drawBot(e, fed);
+        blit(GUY[0], DX, GY);
+        if(!fed) drawPaper(DX+7+step, GY+4, SCRIB.length, RX);
+        if(e>=6*120+300){ planGrowth(); growT0 = now; go('walkoff'); }
+      }
+      else if(phase==='walkoff'){   /* he leaves; the wiring starts behind him */
+        clear();
+        drawGrowth(now - growT0);
+        drawBot(e, true);
+        x = DX - WSPD*1.3*e/1000;
+        drawGuy(GUYL, e, x);
+        if(x <= OFFX) go('grow');
       }
       else if(phase==='grow'){
         clear();
-        for(i=0;i<order.length;i++){
-          b = bubbles[order[i]]; local = e - starts[i];
-          if(local <= 0) continue;
-          var cellsIn = Math.floor(local/1000*GR);
-          drawTrace(b, cellsIn);
-          if(cellsIn >= b.t.cells.length){
-            var over = local - (b.t.cells.length/GR)*1000;
-            if(over < POPT) drawBurst(b);
-            else drawBubble(b, over < POPT+180);
-          }
-        }
+        drawGrowth(now - growT0);
         drawBot(e, true);
-        if(e>=growTotal) go('work');
+        if(now - growT0 >= growTotal) go('work');
       }
       else if(phase==='work'){
         clear();
@@ -1657,18 +1756,18 @@
       }
       else if(phase==='rest'){
         clear(); drawBot(e, false);
-        if(e>=REST) go('wake');
+        if(e>=REST) go('walkin');
       }
       raf = requestAnimationFrame(frame);
     }
 
     drawStatic();                 /* paint immediately so the stage never flashes blank */
     if(reduced) return;
-    go('wake');
+    go('walkin');
     raf = requestAnimationFrame(frame);
 
     function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
-    function thaw(){ if(!raf && !reduced){ go('wake'); raf = requestAnimationFrame(frame); } }
+    function thaw(){ if(!raf && !reduced){ go('walkin'); raf = requestAnimationFrame(frame); } }
     var rsz = null;
     window.addEventListener('resize', function(){
       clearTimeout(rsz);
