@@ -348,7 +348,7 @@
         makes LLMs actually useful.
       </p>
     </div>
-    <div class="scene"><canvas id="spr-robot" aria-label="pixel robot growing circuit traces that end in bubbles holding office-task icons: an envelope, a calendar, a bar chart and a document; data pulses travel along the traces"></canvas></div>
+    <div class="scene"><canvas id="spr-robot" aria-label="pixel character writes a task sheet and feeds it to a robot, which grows circuit traces ending in bubbles holding office-task icons: a banknote, a calendar, a bar chart and a document; data pulses travel along the traces"></canvas></div>
   </section>
 
   <section class="level r flip">
@@ -1495,10 +1495,10 @@
     var SCRIB = [[1,1],[2,1],[3,1],[4,1],[1,2],[2,2],[3,2],[1,3],[2,3],[3,3],[4,3]];
 
     var ICONS = {
-      env: ['kkkkkkk',           /* envelope — flap folds to a tip */
-            'kk...kk',
-            'k.k.k.k',
-            'k..k..k',
+      env: ['kkkkkkk',           /* banknote — green bill, lighter watermark */
+            'kgggggk',
+            'kggwggk',
+            'kgggggk',
             'kkkkkkk'],
       cal: ['.k...k.',           /* calendar — pegs, amber header */
             'kkkkkkk',
@@ -1512,11 +1512,11 @@
             'k.b.a.g',
             'k.b.a.g',
             'kkkkkkk'],
-      doc:  ['kkkkkk.',          /* sheet with a dog-eared corner */
+      doc:  ['kkkkkk.',          /* sheet with a dog-eared corner, blue ruling */
             'k....kk',
-            'k.kk..k',
+            'k.bb..k',
             'k.....k',
-            'k.kkk.k',
+            'k.bbb.k',
             'k.....k',
             'kkkkkkk']
     };
