@@ -1052,10 +1052,8 @@
   (function(){
     var cv = document.getElementById('spr-bulb');
     if(!cv) return;
-    var S = 5, COLS = 34, ROWS = 18;
-    cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+    var S = 5;
     var ctx = cv.getContext('2d');
-    var groundY = ROWS*S;
 
     var BODY = [                 /* facing us, arms drawn separately */
       '..........',
@@ -1115,13 +1113,30 @@
     var RUNL = [flip(RUN[0]), flip(RUN[1])];
 
     var GH = 10, GW = 10*S;
-    var GUYTOP = groundY - GH*S;
-    var GX = Math.round(COLS/2 - 5)*S;      /* parked centre stage */
-    var HANDY = GUYTOP - BH*S;              /* bulb resting on a raised hand */
-    var LHX = GX, RHX = GX + 7*S;           /* bulb x over left / right hand */
-    var APEXX = GX + 3*S;                   /* bulb x right over his head */
-    var APEXY = HANDY - 3*S;
-    var CHASEY = GUYTOP - S;                /* flight height during the chase */
+    /* the stage fills its grid column and stands as tall as the text block
+       beside it, so the whole cell is breathing room for the chase */
+    var COLS, ROWS, groundY, GUYTOP, GX, HANDY, LHX, RHX, APEXX, APEXY, CHASEY, OFFL, OFFR;
+    function sizeStage(){
+      var sec = cv.closest('section');
+      var txt = sec.querySelector('.txt');
+      var track = parseFloat(getComputedStyle(sec).gridTemplateColumns);
+      var cellW = (track && track > 140) ? track : sec.clientWidth;
+      COLS = Math.max(24, Math.floor(cellW/S));
+      ROWS = Math.max(18, Math.round(txt.offsetHeight/S));
+      cv.width = COLS*S; cv.height = ROWS*S; cv.style.width = (COLS*S)+'px';
+      groundY = ROWS*S;
+      /* centred vertically (clamped so the juggle arc stays in frame) —
+         he walks the middle of the stage, not the bottom edge */
+      GUYTOP = Math.max(8, Math.round((ROWS - GH)/2))*S;
+      GX = Math.round(COLS/2 - 5)*S;        /* parked centre stage */
+      HANDY = GUYTOP - BH*S;                /* bulb resting on a raised hand */
+      LHX = GX; RHX = GX + 7*S;             /* bulb x over left / right hand */
+      APEXX = GX + 3*S;                     /* bulb x right over his head */
+      APEXY = HANDY - 3*S;
+      CHASEY = GUYTOP - S;                  /* flight height during the chase */
+      OFFL = -GW - 6; OFFR = COLS*S + 6;
+    }
+    sizeStage();
 
     function clear(){ ctx.clearRect(0,0,cv.width,cv.height); }
     function snap(v){ return Math.round(v/S)*S; }
@@ -1178,7 +1193,6 @@
     var HANG = 230, UP = 430, CONFUSED = 1050, GAP1 = 350, GAP2 = 300, PAUSE = 1300;
     var RUN_SPEED = 95, CHASE_SPEED = 120, STROLL_SPEED = 45;   /* px per second */
     var LEAD = 26;                     /* how far the bulb flies ahead of him */
-    var OFFL = -GW - 6, OFFR = COLS*S + 6;
 
     var phase='juggle', t0=null, raf=null;
     function go(p){ phase=p; t0=null; }
@@ -1221,7 +1235,7 @@
       else if(phase==='up'){           /* ...then bolts, trailing speed lines */
         clear();
         front(FACE.fwd, false, false);
-        bulb(APEXX, APEXY - (e/UP)*9*S, now, {lines:true, glint:false});
+        bulb(APEXX, APEXY - (e/UP)*(APEXY + (BH+8)*S), now, {lines:true, glint:false});
         if(e>=UP) go('confused');
       }
       else if(phase==='confused'){     /* where did it go? looks left, right */
@@ -1273,6 +1287,11 @@
 
     function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
     function thaw(){ if(!raf){ go('juggle'); raf = requestAnimationFrame(frame); } }
+    var rsz = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(rsz);
+      rsz = setTimeout(function(){ sizeStage(); if(!raf) drawStatic(); }, 150);
+    });
     window.addEventListener('beforeprint', freeze);
     window.addEventListener('afterprint', thaw);
     document.addEventListener('visibilitychange', function(){
