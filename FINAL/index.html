@@ -153,6 +153,15 @@
   }
   .lvl5{background:var(--violet);white-space:nowrap}
   .inventory .slot{will-change:transform}
+  /* the lever: a slot-machine arm bolted to the GITHUB block's right edge */
+  #gh-slot{position:relative;cursor:pointer;user-select:none;margin-right:12px}
+  html.printing #gh-slot{margin-right:0}
+  #gh-slot a{cursor:pointer}
+  .lever{position:absolute;left:100%;top:50%;margin:-17px 0 0 2px;pointer-events:none}
+  /* every stage that reacts to clicks says so */
+  .scene canvas.hot{cursor:pointer}
+  .scene canvas.aim{cursor:crosshair}
+  #sweep-track{cursor:copy}
 
   /* debris is drawn on the same 5px pixel grid as the characters, not typed */
   .track .dust{
@@ -234,48 +243,45 @@
     .statusbar{flex-wrap:wrap}
   }
 
-  /* ---------- print: one A4 page, characters freeze in place ---------- */
+  /* ---------- print: one A4 page, characters freeze in place ----------
+     The page is laid out EXACTLY like the screen (same 780px sheet, same
+     fonts, same line breaks) and then the whole sheet is scaled as one
+     picture to fit A4 — so what you see is what you print. JS toggles
+     html.printing on beforeprint / print media (so it can measure the
+     print layout deterministically) and computes --print-tf, the
+     translate+scale that centres the sheet on the page. */
   @page{size:A4;margin:0}
-  @media print{
-    /* the page keeps its checkerboard — paper looks like a game screenshot */
-    body{padding:0;margin:0}
-    /* the thrown dot becomes a real period on paper */
-    #thrown-dot,#splash-fx{display:none!important}
-    .sr-dot{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
-    /* 26mm top margin centres the ~242mm sheet on the 297mm page —
-       if the sheet grows/shrinks a lot, retune this */
-    .sheet{
-      max-width:none;width:189mm;margin:26mm auto 0;box-shadow:none;
-      padding:0 42px 10px;
-    }
-    .statusbar{padding:9px 0 6px;margin-bottom:10px}
-    .intro{font-size:18px}
-    .inventory{margin-top:11px}
-    .level{padding:8px 0 6px}
-    .level p{font-size:17px}
-    /* 50px = exactly the courier's height, so nothing gets clipped */
-    .track{height:50px;margin:6px 0 3px}
-    /* the delivery scene freezes: courier mid-walk with the dot, block at rest.
-       The overlay is JS-sized for the screen, so pin it to the sheet on paper —
-       otherwise its leftover height pushes out a second, blank page. */
-    #scene1{top:0!important;bottom:0!important;height:auto!important}
-    #scene1 .ring{display:none!important}
-    .inventory .slot{transform:none!important}
-    .track .walker{animation:none;left:16%}
-    .track.slow .walker{left:60%}
-    /* stages are JS-sized to the on-screen text, which is taller than the
-       print text — cap them so sections can't grow and spill the page */
-    .scene canvas{max-height:104px;width:auto!important}
-    /* the robot's stage is also wider than the print column — scale it
-       down proportionally so the circuit stays inside the sheet border */
-    #spr-robot{max-width:310px;height:auto!important}
-    .edu{padding:7px 0 0;font-size:15px;gap:4px 20px}
-    .continue{padding-top:6px}
+  html.printing body{padding:0;margin:0}
+  /* exactly one page: the wrapper is the page, whatever spills is clipped */
+  html.printing .page{height:296mm;overflow:hidden;position:relative}
+  html.printing .sheet{
+    width:780px;max-width:none;margin:0;box-shadow:none;
+    transform-origin:0 0;transform:var(--print-tf,none);
   }
+  /* the thrown dot becomes a real period on paper */
+  html.printing #thrown-dot,html.printing #splash-fx{display:none!important}
+  html.printing .sr-dot{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
+  html.printing #scene1{top:0!important;bottom:0!important;height:auto!important}
+  html.printing #scene1 .ring{display:none!important}
+  html.printing .inventory .slot{transform:none!important}
+  html.printing .lever{display:none}
+  html.printing .track .walker{animation:none;left:16%}
+  html.printing .track.slow .walker{left:1%}
+  html.printing .track .dust.extra{display:none}
+  /* tighter vertical rhythm on paper — none of these change any line wrap,
+     so every section prints exactly as it looks on screen, just closer */
+  html.printing .statusbar{padding:12px 0 8px;margin-bottom:16px}
+  html.printing .inventory{margin-top:14px}
+  html.printing .track{margin:14px 0 4px}
+  html.printing .level{padding:14px 0 10px}
+  html.printing .edu{padding:10px 0 0}
+  html.printing .continue{padding-top:8px}
+  html.printing .sheet{padding-bottom:24px}
 </style>
 </head>
 <body>
 
+<div class="page">
 <div class="sheet">
 
   <div class="statusbar">
@@ -311,7 +317,7 @@
   <!-- ✏️ EDIT: contact slots — add/remove as needed -->
   <div class="inventory">
     <div class="slot"><b>EMAIL</b><span><a href="mailto:matejcikdenis@gmail.com">matejcikdenis@gmail.com</a></span></div>
-    <div class="slot" id="gh-slot"><b>GITHUB</b><span><a href="https://github.com/Mild-Solvent">Mild-Solvent</a></span></div>
+    <div class="slot" id="gh-slot" title="pull the lever"><b>GITHUB</b><span><a href="https://github.com/Mild-Solvent">Mild-Solvent</a></span><canvas class="lever" id="gh-lever" aria-label="lever: pull it and the block drops the next level"></canvas></div>
     <div class="slot"><b>BASE</b><span>Slovakia / remote</span></div>
   </div>
 
@@ -406,6 +412,7 @@
   </div>
 
 </div>
+</div>
 
 <script>
 (function(){
@@ -419,6 +426,43 @@
   };
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var registry = [];
+
+  /* ---- print mode switch: registered before every scene so that, by the
+     time their beforeprint handlers measure the page, it is already laid
+     out the way it will print (html.printing carries all print styles) ---- */
+  (function(){
+    var root = document.documentElement;
+    function on(){ root.classList.add('printing'); }
+    function off(){ root.classList.remove('printing'); }
+    window.addEventListener('beforeprint', on);
+    window.addEventListener('afterprint', off);
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var fn = function(m){ if(m.matches) on(); else off(); };
+      if(mq.addEventListener) mq.addEventListener('change', fn);
+      else if(mq.addListener) mq.addListener(fn);
+    }
+  })();
+
+  /* the stages are sized to the text beside them — once the embedded fonts
+     land the text reflows, so every stage re-measures itself (they all
+     listen for resize) instead of keeping the fallback-font size */
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){
+      setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 0);
+    });
+  }
+
+  /* pointer position in a canvas's own pixel space (canvas px, not cells) */
+  function canvasPoint(cv, ev){
+    var r = cv.getBoundingClientRect();
+    return { x: (ev.clientX - r.left) * (cv.width / r.width),
+             y: (ev.clientY - r.top)  * (cv.height / r.height) };
+  }
+  function inBox(p, x, y, w, h, pad){
+    pad = pad || 0;
+    return p.x >= x-pad && p.x < x+w+pad && p.y >= y-pad && p.y < y+h+pad;
+  }
 
   /* measure a scene canvas's stage cell: as wide as its grid column,
      as tall as the text block beside it */
@@ -593,13 +637,55 @@
     var IDLE_AHEAD = hips('..skks....');
     var IDLE_LEFT  = hips('..kkss....');
     var IDLE_RIGHT = hips('..sskk....');
-    /* ~4.7s of waiting around */
-    var IDLE_SEQ = [
+    /* ~9.4s of waiting around (two loops) — long enough that a visitor
+       notices the lever and pulls it before the block gives up and drops
+       the level on its own */
+    var IDLE_ONCE = [
       [IDLE_AHEAD,900],[IDLE_LEFT,800],[IDLE_AHEAD,500],
       [IDLE_RIGHT,800],[IDLE_AHEAD,600],[IDLE_LEFT,700],[IDLE_AHEAD,400]
     ];
+    var IDLE_SEQ = IDLE_ONCE.concat(IDLE_ONCE);
     var WAIT_MS = 0;
     for(var q=0;q<IDLE_SEQ.length;q++) WAIT_MS += IDLE_SEQ[q][1];
+
+    /* --- the lever on the GITHUB block --- */
+    var lever = document.getElementById('gh-lever');
+    var LEVER_UP = [
+      '.r.',
+      '.k.',
+      '.k.',
+      'kkk',
+      '...',
+      '...',
+      '...'];
+    var LEVER_DOWN = [
+      '...',
+      '...',
+      '...',
+      'kkk',
+      '.k.',
+      '.k.',
+      '.r.'];
+    var LEVER_MID = [
+      '...',
+      '...',
+      '..r',
+      'kkk',
+      '...',
+      '...',
+      '...'];
+    if(lever){ lever.width = 3*S; lever.height = 7*S; lever.style.width = (3*S)+'px'; }
+    function leverPose(g){ if(lever) paint(lever, g); }
+
+    /* --- levels: the block hands out LVL 5, then 6, then 7 … one per
+       delivery; the EXP pips in the status bar fill up alongside --- */
+    var level = 5;
+    var pips = document.querySelectorAll('.exp-bar i');
+    function showExp(n){
+      var lit = ((n-1) % pips.length) + 1;              /* bar wraps: level up! */
+      for(var i=0;i<pips.length;i++) pips[i].className = i < lit ? '' : 'off';
+    }
+    function setBadge(n){ badge.textContent = 'LVL '+n; measureBadge(); }
 
     function paint(cv, grid){
       var ctx = cv.getContext('2d');
@@ -636,26 +722,23 @@
       bw = badge.offsetWidth; bh = badge.offsetHeight;
       badge.style.display = prev; badge.style.visibility='';
     }
+    /* layout coordinates (offset*), not client rects: they ignore the block's
+       bounce transform and, more importantly, the whole-sheet print scale —
+       so the frozen paper pose lands exactly where it should */
     function layout(){
-      var sr = sheet.getBoundingClientRect();
-      var cs = getComputedStyle(sheet);
-      var ox = sr.left + (parseFloat(cs.borderLeftWidth)||0);
-      var oy = sr.top  + (parseFloat(cs.borderTopWidth)||0);
-      var tr = track.getBoundingClientRect();
-      var gr = slot.getBoundingClientRect();
-      var sx = Math.round(tr.left - ox);
-      var sw = Math.round(tr.width), sh = sheet.clientHeight;
+      var sx = track.offsetLeft;
+      var sw = track.offsetWidth, sh = sheet.clientHeight;
       if(geo.sx !== sx){ scene.style.left = sx+'px'; scene.style.top='0px'; geo.sx = sx; }
       if(geo.sw !== sw){ scene.style.width = sw+'px'; geo.sw = sw; }
       if(geo.sh !== sh){ scene.style.height = sh+'px'; geo.sh = sh; }
-      geo.w = tr.width;
+      geo.w = sw;
       /* whole pixels only — half-pixel offsets would soften the pixel art */
-      geo.ground = Math.round((tr.top - oy) + track.clientHeight);
+      geo.ground = Math.round(track.offsetTop + track.clientHeight);
       geo.top = geo.ground - HGT;
-      geo.slotL = Math.round(gr.left - ox - sx);
-      geo.slotT = Math.round(gr.top - oy);
-      geo.slotW = Math.round(gr.width);
-      geo.slotH = Math.round(gr.height);
+      geo.slotL = Math.round(slot.offsetLeft - sx);
+      geo.slotT = Math.round(slot.offsetTop);
+      geo.slotW = Math.round(slot.offsetWidth);
+      geo.slotH = Math.round(slot.offsetHeight);
       geo.slotB = geo.slotT + geo.slotH;
       geo.stop = Math.round((geo.slotL + geo.slotW/2 - GW*S/2)/S)*S;
     }
@@ -717,6 +800,7 @@
     /* --- choreography --- */
     var SPEED = 90;                            /* px per second */
     var phase, pStart, x, startX, throwFrom, dropTo;
+    var pulled = false;                        /* lever pulled, drop owed */
 
     function go(p){ phase = p; pStart = performance.now(); }
 
@@ -725,9 +809,33 @@
       x = -GW*S - 20; startX = x;
       dot.style.display='none';
       badge.style.display='none';
+      setBadge(level);
       clearHit();
       go('in');
     }
+
+    /* --- the lever: pull it and the block coughs up the next level.
+       Waiting courier → drops right now. Still walking in / throwing →
+       drops the moment he's in position. Already gone → he hurries back
+       for it. Mid-drop → the block just rattles. --- */
+    var leverT = null;
+    function pullLever(){
+      if(reduced) return;
+      if(leverT) clearTimeout(leverT);
+      leverPose(LEVER_DOWN);
+      leverT = setTimeout(function(){ leverPose(LEVER_MID);
+        leverT = setTimeout(function(){ leverPose(LEVER_UP); leverT = null; }, 90); }, 260);
+      if(phase==='drop' || phase==='carry') return;
+      if(phase==='wait') blockHit();
+      pulled = true; pulledAt = performance.now();
+      if(phase==='gap') reset();
+    }
+    var pulledAt = 0;
+    leverPose(LEVER_UP);
+    slot.addEventListener('click', function(ev){
+      if(ev.target.closest && ev.target.closest('a')) return;   /* the link still links */
+      pullLever();
+    });
 
     function walkPose(){ return WALK[Math.floor(Math.abs(x-startX)/11) % WALK.length]; }
 
@@ -759,7 +867,7 @@
         dot.style.left = snap(throwFrom.x + (tx-throwFrom.x)*ease)+'px';
         dot.style.top  = snap(throwFrom.y + (ty-throwFrom.y)*ease)+'px';
         /* order matters: the hit checks that we are already waiting */
-        if(tt >= 1){ dot.style.display='none'; go('wait'); blockHit(); }
+        if(tt >= 1){ dot.style.display='none'; go('wait'); blockHit(); if(pulled) pulledAt = now; }
       }
       else if(phase==='wait'){                 /* hands on hips, looking around */
         var acc = 0, pose = IDLE_SEQ[IDLE_SEQ.length-1][0];
@@ -768,8 +876,12 @@
           if(e < acc){ pose = IDLE_SEQ[i][0]; break; }
         }
         drawPose(x, pose);
-        if(e >= WAIT_MS){
+        /* the block lets go on its own eventually — or 380ms after a pull,
+           once it has had its bounce */
+        if(e >= WAIT_MS || (pulled && now - pulledAt >= 380)){
+          pulled = false;
           clearHit();
+          setBadge(level);
           dropTo = geo.top + CATCH.arm*S - bh;
           go('drop');
         }
@@ -793,11 +905,14 @@
         x = snap(startX + SPEED*(e/1000));
         var po = walkPose();
         drawPose(x, po); showBadgeAtHands(x, po);
-        if(x > geo.w + 20) go('gap');
+        if(x > geo.w + 20){
+          level++; showExp(level);              /* levelled up — next time it's the next one */
+          go('gap');
+        }
       }
       else if(phase==='gap'){
         badge.style.display='none';
-        if(e > 900) reset();
+        if(e > 900 || pulled) reset();
       }
 
       raf = requestAnimationFrame(frame);
@@ -806,6 +921,7 @@
     /* static fallbacks: reduced motion and paper both get him centre stage,
        mid-stride, carrying the LVL 5 tag the block spat out */
     function still(){
+      setBadge(5); showExp(5);                 /* paper always says LVL 5 */
       layout();
       x = snap((geo.w - GW*S)/2);
       drawPose(x, WALK[0]);
@@ -826,7 +942,7 @@
     });
 
     function freeze(){ if(raf){ cancelAnimationFrame(raf); raf = null; } still(); }
-    function thaw(){ if(!raf){ reset(); raf = requestAnimationFrame(frame); } }
+    function thaw(){ if(!raf){ showExp(level); reset(); raf = requestAnimationFrame(frame); } }
     window.addEventListener('beforeprint', freeze);
     window.addEventListener('afterprint', thaw);
     if(window.matchMedia){
@@ -902,6 +1018,27 @@
        '..k..k..',
        '..k..k..',
        '.kk..kk.'];
+    /* furious: brows down, fists out, one foot stamping */
+    var ANGRY = [
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..kssk..',
+       '..skks..',
+       'sbbbbbbs',
+       '..bbbb..',
+       '..k..k..',
+       '..k..k..',
+       '.kk..kk.'],
+      ['..hhhh..',
+       '.hhhhhh.',
+       '..kssk..',
+       '.rskksr.',
+       'sbbbbbbs',
+       '..bbbb..',
+       '..k.k...',
+       '..k..k..',
+       '.kk.kk..']
+    ];
     var GH = 9, GW = 8;
 
     /* ---- props ---- */
@@ -1023,13 +1160,55 @@
 
     /* ---- timing ---- */
     var STAND_MS=1100, PHONE_MS=3200, POCKET_MS=1400, DROP_MS=800,
-        SLAP_MS=600, SPAWN_MS=700, FLY_MS=5400, CRASH_MS=650,
-        DUST_MS=900, FADE_MS=700;
+        SLAP_MS=600, SPAWN_MS=700, CRASH_MS=650,
+        DUST_MS=900, ANGRY_MS=1700, FADE_MS=700;
     var VAN_SPEED=110, WALK_SPEED=46;     /* px per second */
 
     var phase='stand', t0=null, raf=null;
     var vanX=0, guyX=0, droneAt=null;
-    function go(p){ phase=p; t0=null; }
+    function go(p){
+      phase=p; t0=null;
+      /* the drone is fair game: crosshair while it's up */
+      cv.className = p==='fly' ? 'aim' : '';
+    }
+
+    /* ---- shooting gallery: every click fires a round from the bottom
+       edge up to where you clicked. The drone never crashes by itself —
+       it flies laps until someone brings it down, which does not go over
+       well with the pilot. ---- */
+    var shots = [];                        /* {x,y,t0,hit} in canvas px */
+    var SHOT_MS = 110, BURST_MS = 260;
+    cv.addEventListener('click', function(ev){
+      if(reduced || !raf) return;
+      var p = canvasPoint(cv, ev);
+      var hit = phase==='fly' && droneAt &&
+                inBox(p, droneAt.x, droneAt.y, DW*S, DH*S, 2*S);
+      shots.push({ x: snap(p.x), y: snap(p.y), t0: performance.now(), hit: hit });
+      if(hit){ go('crash'); }
+    });
+    function drawShots(now){
+      for(var i=shots.length-1;i>=0;i--){
+        var s = shots[i], a = now - s.t0;
+        if(a < SHOT_MS){                     /* the round climbs */
+          var y = snap(cv.height - (cv.height - s.y) * (a/SHOT_MS));
+          ctx.fillStyle = C.k; ctx.fillRect(s.x, y, S, S);
+          ctx.fillStyle = C.a; ctx.fillRect(s.x, y+S, S, S);
+        }else if(a < SHOT_MS + BURST_MS){    /* pop where it lands */
+          var r = a < SHOT_MS + 120 ? S : 2*S;
+          ctx.fillStyle = s.hit ? C.r : C.a;
+          ctx.fillRect(s.x-r, s.y, S, S); ctx.fillRect(s.x+r, s.y, S, S);
+          ctx.fillRect(s.x, s.y-r, S, S); ctx.fillRect(s.x, s.y+r, S, S);
+        }else shots.splice(i,1);
+      }
+    }
+    /* steam off the top of his head while he stamps */
+    function steam(x, e){
+      var t = Math.floor(e/140)%3;
+      ctx.fillStyle = LOCAL.m;
+      ctx.fillRect(x + (t===0?0:7)*S, guyY() - 2*S, S, S);
+      ctx.fillRect(x + (t===1?1:6)*S, guyY() - 3*S, S, S);
+      if(t===2) ctx.fillRect(x + 3*S, guyY() - 4*S, S, S);
+    }
 
     function dronePos(e){
       /* two out-of-sync sines = lazy loops around the stage */
@@ -1104,19 +1283,19 @@
         drawPilot(SLAP_X, e);
         if(e>=SPAWN_MS){ go('fly'); }
       }
-      else if(phase==='fly'){
+      else if(phase==='fly'){                   /* laps until somebody shoots it */
         clear();
         var d = dronePos(e);
         droneAt = d;
         blit(DRONE[Math.floor(e/80)%2], d.x, d.y);
         drawPilot(SLAP_X, e);
-        if(e>=FLY_MS) go('crash');
       }
-      else if(phase==='crash'){                 /* dead stick, straight down */
+      else if(phase==='crash'){                 /* shot down: dead stick, straight down */
         clear();
         var t = Math.min(1, e/CRASH_MS);
         var y = snap(droneAt.y + (groundY - DH*S - droneAt.y)*(t*t));
         blit(DRONE[Math.floor(e/60)%2], droneAt.x, y);   /* props flailing */
+        if(e < 160) dust(droneAt.x + 4*S, droneAt.y + 2*S, 2*S, true);  /* the hit */
         drawPilot(SLAP_X, e);
         if(t>=1) go('dust');
       }
@@ -1125,7 +1304,14 @@
         blit(WRECK, droneAt.x, groundY - DH*S);
         dust(droneAt.x + 4*S, groundY, e<450 ? 2*S : 4*S, true);
         drawPilot(SLAP_X, e);
-        if(e>=DUST_MS) go('fade');
+        if(e>=DUST_MS) go('angry');
+      }
+      else if(phase==='angry'){                 /* WHO did that?! stamp, steam */
+        clear();
+        blit(WRECK, droneAt.x, groundY - DH*S);
+        drawGuy(ANGRY[Math.floor(e/170)%2], SLAP_X);
+        steam(SLAP_X, e);
+        if(e>=ANGRY_MS) go('fade');
       }
       else if(phase==='fade'){                  /* the gear vanishes, magically */
         clear();
@@ -1139,16 +1325,18 @@
         drawGuy(walkPose(guyX), guyX);
         if(guyX <= GUY_HOME) go('stand');
       }
+      drawShots(now);
 
       raf = requestAnimationFrame(frame);
     }
 
-    /* static frame for paper and reduced motion: the slap — whack! */
+    /* static frame for paper and reduced motion: the delivery —
+       he stands by, the parcel is on the ground, the car has just pulled up */
     function drawStatic(){
       clear();
+      drawCar(VAN_STOP, 0, false);
       blit(BOX, PKG_X, boxY());
-      drawGuy(SLAP, SLAP_X);
-      dust(PKG_X + 2*S, boxY(), 2*S, false);
+      drawGuy(STAND, GUY_HOME);
     }
 
     clear(); drawGuy(STAND, GUY_HOME);   /* paint immediately, never blank */
@@ -1156,8 +1344,10 @@
     go('stand');
     raf = requestAnimationFrame(frame);
 
-    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
-    function thaw(){ if(!raf){ go('stand'); raf = requestAnimationFrame(frame); } }
+    /* freeze re-measures the stage: print mode tightens the page, and the
+       paper pose must be drawn on a stage sized for THAT layout */
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } shots.length=0; cv.className=''; sizeStage(); drawStatic(); }
+    function thaw(){ if(!raf){ sizeStage(); go('stand'); raf = requestAnimationFrame(frame); } }
     var rsz = null;
     window.addEventListener('resize', function(){
       clearTimeout(rsz);
@@ -1390,8 +1580,69 @@
       blit(CRAB[0], CRAB_HOME, crabY(0));
     }
 
+    /* ---- the mind-control minigame: click the slug and a timing bar
+       pops up over the pair, marker sweeping left-right-left-right; click
+       again to stop it. Land in the green middle → the slug leaps onto the
+       crab and rides it away. Miss → a sad little hop, back to dancing. ---- */
+    var BARW = 29, ZONE = 7, SWEEP = 780;   /* cells, cells, ms one way (~±100ms window) */
+    var aimT0 = 0, aimStop = null, aimHit = false;
+    function barX(){ return Math.max(0, Math.round((COLS - BARW)/2))*S; }
+    function barY(){ return Math.max(4, Math.round((slugY(0)/S) - 8))*S; }
+    function markerCell(t){                 /* triangle wave across the bar */
+      var u = (t/SWEEP) % 2; if(u > 1) u = 2-u;
+      return Math.round(u*(BARW-1));
+    }
+    function drawBar(now, stopped, hit){
+      var bx = barX(), by = barY(), i;
+      var m = stopped === null ? markerCell(now - aimT0) : stopped;
+      var z0 = Math.floor((BARW-ZONE)/2);
+      ctx.fillStyle = C.w; ctx.fillRect(bx, by, BARW*S, 3*S);
+      for(i=0;i<BARW;i++){                    /* frame */
+        ctx.fillStyle = C.k; ctx.fillRect(bx+i*S, by, S, S); ctx.fillRect(bx+i*S, by+2*S, S, S);
+        if(i>=z0 && i<z0+ZONE){ ctx.fillStyle = C.g; ctx.fillRect(bx+i*S, by+S, S, S); }
+      }
+      ctx.fillStyle = C.k; ctx.fillRect(bx-S, by, S, 3*S); ctx.fillRect(bx+BARW*S, by, S, 3*S);
+      /* the marker: a taller stick, amber while sweeping, ink on a hit, rose on a miss */
+      ctx.fillStyle = stopped === null ? C.a : (hit ? C.k : C.r);
+      ctx.fillRect(bx+m*S, by-S, S, 5*S);
+      if(stopped !== null){
+        ctx.fillStyle = hit ? C.g : C.r;
+        ctx.font = "8px 'Press Start 2P', monospace";
+        ctx.textAlign = 'center';
+        ctx.fillText(hit ? 'HIT!' : 'MISS', bx + BARW*S/2, by - S - 2);
+      }
+    }
+    function drawAim(now, e){
+      drawDance(e);
+      drawBar(now, null, false);
+    }
+    function drawMiss(now, e){                /* a hop that goes nowhere */
+      clear();
+      var t = Math.min(1, e/MISS_HOP);
+      blit(CRAB[Math.floor(e/300)%2], CRAB_HOME, crabY(0));
+      blit(SLUG[Math.floor(e/130)%2], SLUG_HOME + snap(2*S*t), snap(slugY(0) - Math.sin(Math.PI*t)*3*S));
+      drawBar(now, aimStop, false);
+    }
+    var MISS_HOP = 460, MISS_SHOW = 900, AIM_MAX = 9000;
+    function slugBox(p){ return inBox(p, SLUG_HOME, slugY(-S), 15*S, SLUG_GH*S + S, S); }
+    cv.addEventListener('click', function(ev){
+      if(reduced || !raf) return;
+      var p = canvasPoint(cv, ev), now = performance.now();
+      if(phase==='dance' && slugBox(p)){ aimT0 = now; go('aim'); }
+      else if(phase==='aim'){
+        var m = markerCell(now - aimT0), z0 = Math.floor((BARW-ZONE)/2);
+        aimStop = m; aimHit = m >= z0 && m < z0+ZONE;
+        if(aimHit) go('mount'); else go('miss');
+      }
+    });
+    cv.addEventListener('mousemove', function(ev){
+      if(!raf) return;
+      var p = canvasPoint(cv, ev);
+      cv.className = phase==='aim' ? 'aim' : ((phase==='dance' && slugBox(p)) ? 'hot' : '');
+    });
+
     /* ---- timing ---- */
-    var DANCE=3000, LEAP=640, GAP=1100, SETTLE=750, HOP=520;
+    var DANCE=5000, LEAP=640, GAP=1100, SETTLE=750, HOP=520;
     var RIDE_SPEED=72, WALK_SPEED=46;    /* px per second */
 
     /* t0 is re-anchored to rAF's own clock on the first frame of every phase,
@@ -1399,13 +1650,19 @@
        undefined pose right after clear() and leave the stage blank on some
        page loads (the intermittent "sometimes it's gone on refresh" bug). */
     var phase='dance', t0=null, raf=null;
-    function go(p){ phase=p; t0=null; }
+    function go(p){ phase=p; t0=null; cv.className = p==='aim' ? 'aim' : ''; }
 
     function frame(now){
       if(t0===null) t0 = now;
       var e = now - t0;
       if(phase==='dance'){ drawDance(e); if(e>=DANCE) go('mount'); }
-      else if(phase==='mount'){ drawMount(e); if(e>=LEAP) go('rideout'); }
+      else if(phase==='aim'){ drawAim(now, e); if(e>=AIM_MAX) go('dance'); }
+      else if(phase==='miss'){ drawMiss(now, e); if(e>=MISS_SHOW) go('dance'); }
+      else if(phase==='mount'){
+        drawMount(e);
+        if(aimHit && e < 650) drawBar(now, aimStop, true);   /* HIT! lingers over the leap */
+        if(e>=LEAP){ aimHit = false; go('rideout'); }
+      }
       else if(phase==='rideout'){
         var xo = snap(RIDER_HOME + RIDE_SPEED*(e/1000));
         drawRide(xo, e);
@@ -1432,8 +1689,8 @@
     go('dance');
     raf = requestAnimationFrame(frame);
 
-    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
-    function thaw(){ if(!raf){ go('dance'); raf = requestAnimationFrame(frame); } }
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } cv.className=''; sizeStage(); drawStatic(); }
+    function thaw(){ if(!raf){ sizeStage(); go('dance'); raf = requestAnimationFrame(frame); } }
     var rsz = null;
     window.addEventListener('resize', function(){
       clearTimeout(rsz);
@@ -1630,13 +1887,16 @@
       dot('k',cx-3,cy); dot('k',cx+3,cy); dot('k',cx,cy-3); dot('k',cx,cy+3);
       dot('a',cx-2,cy-2); dot('a',cx+2,cy-2); dot('a',cx-2,cy+2); dot('a',cx+2,cy+2);
     }
+    var shakeT = -1e9;                                 /* last poke, ms */
     function drawBot(e, awake){
       var g = BOT.slice();
       if(!awake) g[0] = '.....';                       /* antenna dark */
       else if((e%800) < 400) g[0] = '..k..';           /* blinking light */
       if(awake && (e%2600) < 160) g[3] = 'kkkkk';      /* eye blink */
       if(!awake) g[3] = 'k.k.k';                       /* eyes shut */
-      blit(g, RX, RY);
+      var now = performance.now(), sh = 0;
+      if(now - shakeT < 150) sh = (Math.floor(now/40)%2) ? 1 : -1;   /* poked: rattles */
+      blit(g, RX+sh, RY);
     }
     function drawGuy(frames, e, x){
       blit(frames[Math.floor(e/110)%2], Math.round(x), GY);
@@ -1658,8 +1918,56 @@
         drawTrace(bubbles[i], Infinity);
         drawBubble(bubbles[i], false);
       }
+      shakeT = -1e9;
       drawBot(0, true);
     }
+
+    /* ---- easter egg: poke the agent five times in a hurry and it blows
+       up. The guy turns up for his usual routine, finds a scorch mark,
+       scratches his head, wanders off and comes back lugging a fresh
+       agent, sets it down, and picks the cycle back up from the top. ---- */
+    var QMARK = ['kkk','..k','.kk','...','.k.'];
+    var SCORCH = ['..k..','k.kkk'];              /* what's left on the floor */
+    var pokes = [], parts = [], guyX = null;     /* guyX: where he stands, or null = off stage */
+    var BOT_PHASES = {walkin:1,write:1,deliver:1,insert:1,walkoff:1,grow:1,work:1,sleep:1,rest:1};
+    var GUY_ON = {walkin:1,write:1,deliver:1,insert:1,walkoff:1};
+    function botBox(p){ return inBox(p, RX*S, RY*S, 5*S, 8*S, S); }
+    function explode(now){
+      parts = [];
+      for(var i=0;i<16;i++){
+        var a = Math.random()*Math.PI*2, v = 6 + Math.random()*16;   /* cells per second */
+        parts.push({x:RX+2.5, y:RY+4, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 8,
+                    c: i%3===0 ? 'a' : (i%3===1 ? 'k' : 'w')});
+      }
+      if(!GUY_ON[phase]) guyX = null;
+      go('boom');
+    }
+    function drawParts(e, dt){
+      for(var i=0;i<parts.length;i++){
+        var p = parts[i];
+        p.vy += 40*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+        if(p.y < ROWS) dot(p.c, Math.floor(p.x), Math.floor(p.y));
+      }
+    }
+    function drawScorch(){ blit(SCORCH, RX, RY+6); }
+    function drawCarried(x, e){               /* the new agent, hugged in front */
+      blit(BOT, Math.round(x)+8, GY-1);
+      drawGuy(GUY, e, x);
+    }
+    cv.addEventListener('click', function(ev){
+      if(reduced || !raf || !BOT_PHASES[phase]) return;
+      var p = canvasPoint(cv, ev);
+      if(!botBox(p)) return;
+      var now = performance.now();
+      shakeT = now;
+      pokes.push(now);
+      while(pokes.length && now - pokes[0] > 1500) pokes.shift();
+      if(pokes.length >= 5){ pokes = []; explode(now); }
+    });
+    cv.addEventListener('mousemove', function(ev){
+      if(!raf) return;
+      cv.className = (BOT_PHASES[phase] && botBox(canvasPoint(cv, ev))) ? 'hot' : '';
+    });
 
     /* ---- timing ---- */
     var GR = 28;                  /* trace growth, cells per second */
@@ -1694,22 +2002,23 @@
       }
     }
 
-    var phase='walkin', t0=null, raf=null, growT0=0;
-    function go(p){ phase=p; t0=null; }
+    var phase='walkin', t0=null, raf=null, growT0=0, lastNow=0;
+    function go(p){ phase=p; t0=null; if(!BOT_PHASES[p]) cv.className=''; }
 
     function frame(now){
       if(t0===null) t0 = now;
       var e = now - t0, i, b, x;
+      var dt = Math.min(0.05, (now - lastNow)/1000); lastNow = now;
       if(phase==='walkin'){         /* he arrives with a blank sheet */
         clear(); drawBot(e, false);
-        x = Math.min(WX, OFFX + WSPD*e/1000);
+        x = Math.min(WX, OFFX + WSPD*e/1000); guyX = x;
         drawGuy(GUY, e, x);
         drawPaper(Math.round(x)+7, GY+4, 0);
         if(x>=WX) go('write');
       }
       else if(phase==='write'){     /* scribbles the task list */
         clear(); drawBot(e, false);
-        blit(GUY[0], WX, GY);
+        blit(GUY[0], WX, GY); guyX = WX;
         var n = Math.floor(e/200);
         drawPaper(WX+7, GY+4, n);
         if(n < SCRIB.length)        /* pen rides just above the current mark */
@@ -1718,7 +2027,7 @@
       }
       else if(phase==='deliver'){   /* carries it over to the agent */
         clear(); drawBot(e, false);
-        x = Math.min(DX, WX + WSPD*e/1000);
+        x = Math.min(DX, WX + WSPD*e/1000); guyX = x;
         drawGuy(GUY, e, x);
         drawPaper(Math.round(x)+7, GY+4, SCRIB.length);
         if(x>=DX) go('insert');
@@ -1728,7 +2037,7 @@
         var step = Math.floor(e/120);
         var fed = step >= 6;
         drawBot(e, fed);
-        blit(GUY[0], DX, GY);
+        blit(GUY[0], DX, GY); guyX = DX;
         if(!fed) drawPaper(DX+7+step, GY+4, SCRIB.length, RX);
         if(e>=6*120+300){ planGrowth(); growT0 = now; go('walkoff'); }
       }
@@ -1736,9 +2045,60 @@
         clear();
         drawGrowth(now - growT0);
         drawBot(e, true);
-        x = DX - WSPD*1.3*e/1000;
+        x = DX - WSPD*1.3*e/1000; guyX = x;
         drawGuy(GUYL, e, x);
         if(x <= OFFX) go('grow');
+      }
+      /* ---- the easter-egg detour ---- */
+      else if(phase==='boom'){      /* flash, then bits everywhere */
+        clear();
+        if(e < 90){ ctx.fillStyle = e < 45 ? C.w : C.a; ctx.fillRect((RX-2)*S,(RY-2)*S,9*S,12*S); }
+        else { drawScorch(); drawParts(e, dt); }
+        if(guyX !== null) blit(GUY[0], Math.round(guyX), GY);   /* frozen mid-step */
+        if(e>=800) go('cwalk');
+      }
+      else if(phase==='cwalk'){     /* comes over to see what happened */
+        clear(); drawScorch(); drawParts(e, dt);
+        var from = guyX === null ? OFFX : guyX;
+        x = Math.min(DX, from + WSPD*e/1000);
+        drawGuy(GUY, e, x);
+        if(x>=DX) go('confused');
+      }
+      else if(phase==='confused'){  /* looks left, looks right, ??? */
+        clear(); drawScorch();
+        var turned = e >= 450 && e < 900;
+        blit(turned ? GUYL[0] : GUY[0], DX, GY);
+        if(Math.floor(e/300)%2===0) blit(QMARK, DX+ (turned?3:4), GY-6);
+        if(e>=1400) go('fetch');
+      }
+      else if(phase==='fetch'){     /* off to the cupboard */
+        clear(); drawScorch();
+        x = DX - WSPD*1.3*e/1000;
+        drawGuy(GUYL, e, x);
+        if(x <= OFFX) go('fetchgap');
+      }
+      else if(phase==='fetchgap'){ clear(); drawScorch(); if(e>=600) go('bring'); }
+      else if(phase==='bring'){     /* back with a boxed-up new agent */
+        clear(); drawScorch();
+        x = Math.min(DX, OFFX + WSPD*0.8*e/1000);
+        drawCarried(x, e);
+        if(x>=DX) go('place');
+      }
+      else if(phase==='place'){     /* sets it down on the mark */
+        clear();
+        var pt = Math.min(1, e/520);
+        var px = Math.round((DX+8) + (RX-(DX+8))*pt), py = Math.round((GY-1) + (RY-(GY-1))*pt - Math.sin(Math.PI*pt)*2);
+        if(pt < 1) drawScorch();
+        blit(BOT, px, py);
+        blit(GUY[0], DX, GY);
+        if(pt >= 1 && e < 820){ dot('a', RX-1, RY+7); dot('a', RX+5, RY+7); }   /* thump */
+        if(e>=820) go('stepback');
+      }
+      else if(phase==='stepback'){  /* steps back to write it a fresh sheet */
+        clear(); drawBot(e, false);
+        x = Math.max(WX, DX - WSPD*e/1000);
+        drawGuy(GUYL, e, x);
+        if(x<=WX) go('write');
       }
       else if(phase==='grow'){
         clear();
@@ -1789,8 +2149,8 @@
     go('walkin');
     raf = requestAnimationFrame(frame);
 
-    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
-    function thaw(){ if(!raf && !reduced){ go('walkin'); raf = requestAnimationFrame(frame); } }
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } cv.className=''; sizeStage(); drawStatic(); }
+    function thaw(){ if(!raf && !reduced){ sizeStage(); go('walkin'); raf = requestAnimationFrame(frame); } }
     var rsz = null;
     window.addEventListener('resize', function(){
       clearTimeout(rsz);
@@ -1929,15 +2289,33 @@
     function fx(pixels, c, bx, by){
       for(var i=0;i<pixels.length;i++) dot(c, bx+pixels[i][0]*S, by+pixels[i][1]*S);
     }
+    var bulbAt = {x:0, y:0};              /* where it was last drawn (click target) */
     function bulb(x, y, now, o){
       o = o || {};
       x = snap(x); y = snap(y);
+      bulbAt.x = x; bulbAt.y = y;
       blit(BULB, x, y);
       if(o.glint !== false && (now % 2600) < 190) fx(GLINT, 'h', x, y);
       if(o.burst) fx(BURST, 'k', x, y);
       if(o.lines) fx(LINES, 'k', x, y);
     }
     function blinkFace(e){ return (e%2200) < 160 ? FACE.blink : FACE.fwd; }
+
+    /* ---- poke the bulb while he juggles and it bolts right now, from
+       wherever it is (it was going to anyway — you just hurried it) ---- */
+    var flyFrom = null;                    /* where the escape starts */
+    function bulbBox(p){ return inBox(p, bulbAt.x, bulbAt.y, 4*S, BH*S, 1.5*S); }
+    cv.addEventListener('click', function(ev){
+      if(reduced || !raf) return;
+      if((phase==='juggle' || phase==='lastup') && bulbBox(canvasPoint(cv, ev))){
+        flyFrom = {x:bulbAt.x, y:bulbAt.y};
+        go('hang');
+      }
+    });
+    cv.addEventListener('mousemove', function(ev){
+      if(!raf) return;
+      cv.className = ((phase==='juggle' || phase==='lastup') && bulbBox(canvasPoint(cv, ev))) ? 'hot' : '';
+    });
 
     /* one toss: even tosses go left hand -> right hand, odd go back.
        Each toss opens with a short "dip": the catching hand springs down
@@ -1949,11 +2327,11 @@
                y: HANDY - Math.sin(Math.PI*t)*3*S };   /* over his head */
     }
 
-    function drawStatic(){
+    function drawStatic(){                 /* paper: mid-chase, bulb just ahead of him */
       clear();
-      front(FACE.fwd, false, false);
+      guy(RUNL[0], GX);
       /* now=0 lands inside the glint window, so the paper bulb sparkles */
-      bulb(APEXX, APEXY, 0);
+      bulb(GX - 4*S, GUYTOP - 4*S, 0);
     }
 
     /* ---- timing ---- */
@@ -1963,7 +2341,7 @@
     var LEAD = 26;                     /* how far the bulb flies ahead of him */
 
     var phase='juggle', t0=null, raf=null;
-    function go(p){ phase=p; t0=null; }
+    function go(p){ phase=p; t0=null; if(p!=='juggle' && p!=='lastup') cv.className=''; }
 
     function frame(now){
       if(t0===null) t0 = now;
@@ -1991,19 +2369,19 @@
           var t = Math.min(1, (e-DIP)/(TOSS/2));
           var p2 = tossPos(THROWS, t*0.5);
           bulb(p2.x, p2.y, now);
-          if(t>=1) go('hang');
+          if(t>=1){ flyFrom = {x:APEXX, y:APEXY}; go('hang'); }
         }
       }
       else if(phase==='hang'){         /* ...freezes there for a beat... */
         clear();
         front(FACE.fwd, false, false);
-        bulb(APEXX, APEXY, now, {burst:true, glint:false});
+        bulb(flyFrom.x, flyFrom.y, now, {burst:true, glint:false});
         if(e>=HANG) go('up');
       }
       else if(phase==='up'){           /* ...then bolts, trailing speed lines */
         clear();
         front(FACE.fwd, false, false);
-        bulb(APEXX, APEXY - (e/UP)*(APEXY + (BH+8)*S), now, {lines:true, glint:false});
+        bulb(flyFrom.x, flyFrom.y - (e/UP)*(flyFrom.y + (BH+8)*S), now, {lines:true, glint:false});
         if(e>=UP) go('confused');
       }
       else if(phase==='confused'){     /* where did it go? looks left, right */
@@ -2053,8 +2431,8 @@
     go('juggle');
     raf = requestAnimationFrame(frame);
 
-    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } drawStatic(); }
-    function thaw(){ if(!raf){ go('juggle'); raf = requestAnimationFrame(frame); } }
+    function freeze(){ if(raf){ cancelAnimationFrame(raf); raf=null; } cv.className=''; sizeStage(); drawStatic(); }
+    function thaw(){ if(!raf){ sizeStage(); go('juggle'); raf = requestAnimationFrame(frame); } }
     var rsz = null;
     window.addEventListener('resize', function(){
       clearTimeout(rsz);
@@ -2300,8 +2678,33 @@
     for(var i=0;i<POS.length;i++){
       var s = debris(DOT);
       track.appendChild(s);
-      items.push({el:s, frac:POS[i], x:0, state:'rest'});
+      items.push({el:s, frac:POS[i], x:0, state:'rest', fixed:true});
     }
+
+    /* ---- click the line: more mess for him. Extra dots fall where you
+       clicked, get swept like the rest, and are tidied out of the list once
+       he has pushed them off the edge. Not printed — paper gets the five. ---- */
+    var MAX_EXTRA = 60;
+    function spawn(px){
+      var extras = 0;
+      for(var i=0;i<items.length;i++) if(!items[i].fixed) extras++;
+      if(extras >= MAX_EXTRA) return;
+      var el = debris(DOT); el.className += ' extra';
+      track.appendChild(el);
+      var it = {el:el, frac:0, x:Math.round(px/S)*S, state:'fall', fixed:false};
+      items.push(it);
+      drop(it, 0);
+    }
+    function pruneExtras(){
+      for(var i=items.length-1;i>=0;i--){
+        var it = items[i];
+        if(!it.fixed && it.state==='gone'){ track.removeChild(it.el); items.splice(i,1); }
+      }
+    }
+    if(!reduced) track.addEventListener('click', function(ev){
+      var r = track.getBoundingClientRect();
+      spawn(Math.max(0, Math.min(r.width - S, ev.clientX - r.left)));
+    });
 
     function land(it){ /* sitting on the line, ready to be swept */
       it.state='rest';
@@ -2311,7 +2714,8 @@
     }
     function place(){
       var w = track.clientWidth;
-      for(var i=0;i<items.length;i++) items[i].x = Math.round(w*items[i].frac/S)*S;
+      for(var i=0;i<items.length;i++)
+        if(items[i].fixed) items[i].x = Math.round(w*items[i].frac/S)*S;
     }
 
     /* dot falls from above the line and bounces twice before settling */
@@ -2344,7 +2748,9 @@
 
     function reset(){
       place();
+      pruneExtras();
       for(var i=0;i<items.length;i++){
+        if(!items[i].fixed) continue;             /* your extra mess stays put */
         if(reduced) land(items[i]);
         else drop(items[i], 120 + i*170 + Math.random()*90);
       }
@@ -2393,6 +2799,31 @@
       }
       requestAnimationFrame(watch);
     })();
+  })();
+
+  /* ---- print fit: the last handler to run. By now html.printing is on
+     and every scene has frozen, so measure the sheet as it will print and
+     scale it — as one picture, line breaks and all — onto a single A4. ---- */
+  (function(){
+    var sheet = document.querySelector('.sheet');
+    if(!sheet) return;
+    var PW = 793.7, PH = 1118.7;            /* 210mm × 296mm at 96dpi (see .page) */
+    var PAD = 26;                           /* breathing room, px on the page */
+    function fit(){
+      var W = sheet.offsetWidth, H = sheet.offsetHeight;
+      if(!W || !H) return;
+      var s = Math.min((PW - 2*PAD)/W, (PH - 2*PAD)/H);
+      var left = (PW - W*s)/2, top = (PH - H*s)/2;
+      sheet.style.setProperty('--print-tf',
+        'translate('+left.toFixed(2)+'px,'+top.toFixed(2)+'px) scale('+s.toFixed(4)+')');
+    }
+    window.addEventListener('beforeprint', fit);
+    if(window.matchMedia){
+      var mq = window.matchMedia('print');
+      var fn = function(m){ if(m.matches) fit(); };
+      if(mq.addEventListener) mq.addEventListener('change', fn);
+      else if(mq.addListener) mq.addListener(fn);
+    }
   })();
 })();
 </script>
