@@ -156,8 +156,8 @@
   /* the lever: a slot-machine arm bolted to the GITHUB block's right edge */
   #gh-slot{position:relative;cursor:pointer;user-select:none}
   #gh-slot a{cursor:pointer}
-  /* it stands on top of the block's frame, at the right corner, and cranks left */
-  .lever{position:absolute;right:6px;bottom:calc(100% + 2px);pointer-events:none}
+  /* it stands centred on top of the block's frame and cranks left */
+  .lever{position:absolute;left:50%;margin-left:-15px;bottom:calc(100% + 2px);pointer-events:none}
   /* every stage that reacts to clicks says so */
   .scene canvas.hot{cursor:pointer}
   .scene canvas.aim{cursor:crosshair}
@@ -1631,7 +1631,7 @@
     });
 
     /* ---- timing ---- */
-    var DANCE=5000, LEAP=640, GAP=1100, SETTLE=750, HOP=520;
+    var LEAP=640, GAP=1100, SETTLE=750, HOP=520;
     var RIDE_SPEED=72, WALK_SPEED=46;    /* px per second */
 
     /* t0 is re-anchored to rAF's own clock on the first frame of every phase,
@@ -1644,7 +1644,7 @@
     function frame(now){
       if(t0===null) t0 = now;
       var e = now - t0;
-      if(phase==='dance'){ drawDance(e); if(e>=DANCE) go('mount'); }
+      if(phase==='dance'){ drawDance(e); }   /* dances until the player wins the minigame */
       else if(phase==='aim'){ drawAim(now, e); if(e>=AIM_MAX) go('dance'); }
       else if(phase==='miss'){ drawMiss(now, e); if(e>=MISS_SHOW) go('dance'); }
       else if(phase==='mount'){
