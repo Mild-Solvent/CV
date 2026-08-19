@@ -154,10 +154,10 @@
   .lvl5{background:var(--violet);white-space:nowrap}
   .inventory .slot{will-change:transform}
   /* the lever: a slot-machine arm bolted to the GITHUB block's right edge */
-  #gh-slot{position:relative;cursor:pointer;user-select:none;margin-right:12px}
-  html.printing #gh-slot{margin-right:0}
+  #gh-slot{position:relative;cursor:pointer;user-select:none}
   #gh-slot a{cursor:pointer}
-  .lever{position:absolute;left:100%;top:50%;margin:-17px 0 0 2px;pointer-events:none}
+  /* it stands on top of the block's frame, at the right corner, and cranks left */
+  .lever{position:absolute;right:6px;bottom:calc(100% + 2px);pointer-events:none}
   /* every stage that reacts to clicks says so */
   .scene canvas.hot{cursor:pointer}
   .scene canvas.aim{cursor:crosshair}
@@ -637,44 +637,33 @@
     var IDLE_AHEAD = hips('..skks....');
     var IDLE_LEFT  = hips('..kkss....');
     var IDLE_RIGHT = hips('..sskk....');
-    /* ~9.4s of waiting around (two loops) — long enough that a visitor
-       notices the lever and pulls it before the block gives up and drops
-       the level on its own */
-    var IDLE_ONCE = [
+    /* one idle loop (~4.7s); he repeats it for as long as it takes —
+       the block only lets go when somebody pulls the lever */
+    var IDLE_SEQ = [
       [IDLE_AHEAD,900],[IDLE_LEFT,800],[IDLE_AHEAD,500],
       [IDLE_RIGHT,800],[IDLE_AHEAD,600],[IDLE_LEFT,700],[IDLE_AHEAD,400]
     ];
-    var IDLE_SEQ = IDLE_ONCE.concat(IDLE_ONCE);
     var WAIT_MS = 0;
     for(var q=0;q<IDLE_SEQ.length;q++) WAIT_MS += IDLE_SEQ[q][1];
 
     /* --- the lever on the GITHUB block --- */
     var lever = document.getElementById('gh-lever');
-    var LEVER_UP = [
-      '.r.',
-      '.k.',
-      '.k.',
-      'kkk',
-      '...',
-      '...',
-      '...'];
-    var LEVER_DOWN = [
-      '...',
-      '...',
-      '...',
-      'kkk',
-      '.k.',
-      '.k.',
-      '.r.'];
-    var LEVER_MID = [
-      '...',
-      '...',
-      '..r',
-      'kkk',
-      '...',
-      '...',
-      '...'];
-    if(lever){ lever.width = 3*S; lever.height = 7*S; lever.style.width = (3*S)+'px'; }
+    var LEVER_UP = [            /* standing on the block's top edge */
+      '...r..',
+      '...k..',
+      '...k..',
+      '..kkk.'];
+    var LEVER_MID = [           /* mid-crank */
+      '......',
+      '.r....',
+      '..k...',
+      '..kkk.'];
+    var LEVER_DOWN = [          /* cranked all the way left */
+      '......',
+      '......',
+      'rkkk..',
+      '..kkk.'];
+    if(lever){ lever.width = 6*S; lever.height = 4*S; lever.style.width = (6*S)+'px'; }
     function leverPose(g){ if(lever) paint(lever, g); }
 
     /* --- levels: the block hands out LVL 5, then 6, then 7 … one per
@@ -822,9 +811,10 @@
     function pullLever(){
       if(reduced) return;
       if(leverT) clearTimeout(leverT);
-      leverPose(LEVER_DOWN);
-      leverT = setTimeout(function(){ leverPose(LEVER_MID);
-        leverT = setTimeout(function(){ leverPose(LEVER_UP); leverT = null; }, 90); }, 260);
+      leverPose(LEVER_MID);
+      leverT = setTimeout(function(){ leverPose(LEVER_DOWN);
+        leverT = setTimeout(function(){ leverPose(LEVER_MID);
+          leverT = setTimeout(function(){ leverPose(LEVER_UP); leverT = null; }, 80); }, 320); }, 70);
       if(phase==='drop' || phase==='carry') return;
       if(phase==='wait') blockHit();
       pulled = true; pulledAt = performance.now();
@@ -869,16 +859,15 @@
         /* order matters: the hit checks that we are already waiting */
         if(tt >= 1){ dot.style.display='none'; go('wait'); blockHit(); if(pulled) pulledAt = now; }
       }
-      else if(phase==='wait'){                 /* hands on hips, looking around */
-        var acc = 0, pose = IDLE_SEQ[IDLE_SEQ.length-1][0];
+      else if(phase==='wait'){                 /* hands on hips, looking around — for as long as it takes */
+        var acc = 0, el = e % WAIT_MS, pose = IDLE_SEQ[IDLE_SEQ.length-1][0];
         for(var i=0;i<IDLE_SEQ.length;i++){
           acc += IDLE_SEQ[i][1];
-          if(e < acc){ pose = IDLE_SEQ[i][0]; break; }
+          if(el < acc){ pose = IDLE_SEQ[i][0]; break; }
         }
         drawPose(x, pose);
-        /* the block lets go on its own eventually — or 380ms after a pull,
-           once it has had its bounce */
-        if(e >= WAIT_MS || (pulled && now - pulledAt >= 380)){
+        /* the block lets go 380ms after a pull, once it has had its bounce */
+        if(pulled && now - pulledAt >= 380){
           pulled = false;
           clearHit();
           setBadge(level);
