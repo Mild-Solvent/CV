@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "cv",
+      "name": "cv-site",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "FINAL"],
-      "port": 8765
+      "runtimeArgs": ["-m", "http.server", "8317", "--directory", "FINAL"],
+      "port": 8317
     }
   ]
 }

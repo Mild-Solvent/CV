@@ -213,6 +213,126 @@
   .a .lvl-tag{background:var(--amber)}
   .r .lvl-tag{background:var(--rose)}
 
+  /* ---------- page 1: the chronicle ---------- */
+  .page + .page{margin-top:46px}
+  #levels{scroll-margin-top:14px}
+
+  .sheet-one{padding:0 44px 32px}
+
+  .chronicle{
+    display:grid;
+    grid-template-columns:68px minmax(0,1fr) 68px;
+    gap:0 18px;align-items:stretch;
+    padding-top:6px;
+  }
+  .flagpost{
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:space-between;gap:22px;
+  }
+  .flagpost canvas{display:block}
+  .scroll-col{min-width:0}
+
+  .chron-hd{display:block;text-align:center}
+  .chron-hd h1{margin:0 0 8px}
+  .chron-sub{
+    font-family:var(--px);font-size:8px;letter-spacing:1px;color:var(--mid);margin:0;
+  }
+  .chron-inv{justify-content:center;margin-top:16px}
+
+  /* a small ornament instead of a rule — three blocks on a dashed line */
+  .ornament{display:flex;align-items:center;justify-content:center;gap:7px;margin:20px 0 16px}
+  .ornament::before,.ornament::after{content:'';height:2px;flex:1;background:var(--mid)}
+  .ornament i{width:6px;height:6px;background:var(--mid)}
+  .ornament i:nth-child(2){width:10px;height:10px;background:var(--ink)}
+
+  /* about — illuminated capital floats into the first paragraph */
+  .about{font-size:20px;line-height:1.32}
+  .about p{margin:0 0 11px;max-width:none}
+  .about p:last-child{margin-bottom:0}
+  .dropcap{float:left;margin:5px 14px 2px 0;display:block}
+  .dropcap canvas{display:block;box-shadow:4px 4px 0 rgba(38,40,31,.18)}
+  .dc-hide{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* quest log / timeline */
+  .tl-cap{
+    font-family:var(--px);font-size:8px;letter-spacing:1px;color:var(--mid);
+    margin:0 0 14px;text-align:center;
+  }
+  .tl-row{display:flex;gap:12px;align-items:stretch}
+  .tl-year{
+    flex:0 0 54px;text-align:right;padding-top:6px;
+    font-family:var(--px);font-size:8px;letter-spacing:1px;color:var(--mid);line-height:1.5;
+  }
+  .tl-line{flex:0 0 14px;position:relative}
+  .tl-line::before{
+    content:'';position:absolute;left:5px;top:0;bottom:0;width:4px;background:var(--mid);
+  }
+  .tl-row:first-child .tl-line::before{top:8px}
+  .tl-row:last-child .tl-line::before{bottom:auto;height:10px}
+  .tl-line i{
+    position:absolute;left:0;top:4px;width:14px;height:14px;background:var(--mid);
+    box-shadow:0 0 0 3px var(--paper),3px 3px 0 rgba(38,40,31,.22);
+  }
+  .tl-row.g .tl-line i{background:var(--green)}
+  .tl-row.b .tl-line i{background:var(--blue)}
+  .tl-row.a .tl-line i{background:var(--amber)}
+  .tl-row.r .tl-line i{background:var(--rose)}
+  .tl-row.v .tl-line i{background:var(--violet)}
+  .tl-body{flex:1;min-width:0;padding:0 0 13px}
+  .tl-row:last-child .tl-body{padding-bottom:0}
+  .tl-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .tl-title h3{font-family:var(--px);font-size:10px;margin:0;line-height:1.5;font-weight:400}
+  .tl-title h3 a{color:inherit;text-decoration:none;border-bottom:3px dotted var(--mid);padding-bottom:2px}
+  .tl-title h3 a:hover{border-bottom-style:solid}
+  .tl-row.g h3 a:hover{color:var(--green)}
+  .tl-row.b h3 a:hover{color:var(--blue)}
+  .tl-row.a h3 a:hover{color:var(--amber)}
+  .tl-row.r h3 a:hover{color:var(--rose)}
+  .tl-row.v h3 a:hover{color:var(--violet)}
+  .tl-chip{
+    font-family:var(--px);font-size:6px;letter-spacing:1px;color:var(--mid);
+    border:2px solid var(--ink);padding:4px 5px 3px;background:#f7f8ec;
+  }
+  .tl-body p{font-size:18px;line-height:1.26;margin:0}
+  .tl-stack{color:var(--mid);font-size:16px;margin-top:2px!important;letter-spacing:.2px}
+
+  /* the continue plaque — pressed pixel button, medieval signpost */
+  .quest-continue{display:flex;justify-content:center;margin-top:24px}
+  .bigbtn{
+    display:inline-flex;align-items:center;gap:14px;
+    font-family:var(--px);font-size:12px;letter-spacing:2px;
+    color:var(--paper);background:var(--green);
+    border:4px solid var(--ink);padding:15px 24px 13px;
+    text-decoration:none;cursor:pointer;position:relative;
+    box-shadow:
+      6px 6px 0 rgba(38,40,31,.35),
+      inset 0 4px 0 rgba(255,255,255,.20),
+      inset 0 -4px 0 rgba(38,40,31,.22);
+  }
+  .bigbtn::before,.bigbtn::after{
+    content:'';position:absolute;width:6px;height:6px;background:var(--paper);top:5px;
+  }
+  .bigbtn::before{left:5px}
+  .bigbtn::after{right:5px}
+  .bigbtn:hover{background:#57a95a}
+  .bigbtn:active{
+    transform:translate(3px,3px);
+    box-shadow:
+      3px 3px 0 rgba(38,40,31,.35),
+      inset 0 4px 0 rgba(255,255,255,.20),
+      inset 0 -4px 0 rgba(38,40,31,.22);
+  }
+  .bigbtn .caret{animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.bigbtn .caret{animation:none}}
+
+  @media (max-width:760px){
+    .chronicle{grid-template-columns:1fr}
+    .flagpost{flex-direction:row;justify-content:center;gap:16px;padding-bottom:18px}
+    .flagpost.right{display:none}
+    .tl-year{flex-basis:44px}
+  }
+
   /* ---------- education (quiet, footnote-level) ---------- */
   .edu{
     display:flex;justify-content:space-between;align-items:baseline;
@@ -253,7 +373,10 @@
   @page{size:A4;margin:0}
   html.printing body{padding:0;margin:0}
   /* exactly one page: the wrapper is the page, whatever spills is clipped */
-  html.printing .page{height:296mm;overflow:hidden;position:relative}
+  html.printing .page{height:296mm;overflow:hidden;position:relative;
+    page-break-after:always;break-after:page}
+  html.printing .page:last-of-type{page-break-after:auto;break-after:auto}
+  html.printing .page + .page{margin-top:0}
   html.printing .sheet{
     width:780px;max-width:none;margin:0;box-shadow:none;
     transform-origin:0 0;transform:var(--print-tf,none);
@@ -277,12 +400,242 @@
   html.printing .edu{padding:10px 0 0}
   html.printing .continue{padding-top:8px}
   html.printing .sheet{padding-bottom:24px}
+  /* page 1 tightens the same way — no line wrap changes, just less air */
+  html.printing .chronicle{padding-top:2px}
+  html.printing .chron-inv{margin-top:12px}
+  html.printing .ornament{margin:14px 0 11px}
+  html.printing .tl-body{padding-bottom:7px}
+  html.printing .about p{margin-bottom:8px}
+  html.printing .tl-cap{margin-bottom:10px}
+  html.printing .chron-hd h1{margin-bottom:5px}
+  html.printing .quest-continue{margin-top:16px}
+  html.printing .bigbtn .caret{animation:none}
+  /* page 1 carries far more text than page 2, so on paper it widens to
+     A4's proportions instead of printing as a tall narrow column */
+  html.printing .sheet-one{width:1020px}
 </style>
 </head>
 <body>
 
-<div class="page">
-<div class="sheet">
+<div class="page page-one" id="top">
+<div class="sheet sheet-one">
+
+  <div class="statusbar">
+    <span>PLAYER 1</span>
+    <span class="exp">PAGE
+      <span class="exp-bar" aria-hidden="true"><i></i><i class="off"></i></span>
+    </span>
+    <span>WORLD 2026</span>
+  </div>
+
+  <div class="chronicle">
+
+    <!-- banners hang down both margins; drawn on the same 5px pixel grid -->
+    <div class="flagpost left" aria-hidden="true">
+      <canvas class="banner" id="bn-1"></canvas>
+      <canvas class="banner" id="bn-2"></canvas>
+      <canvas class="banner" id="bn-3"></canvas>
+    </div>
+
+    <div class="scroll-col">
+
+      <header class="chron-hd">
+        <!-- ✏️ EDIT: page-1 kicker -->
+        <p class="role">THE CHRONICLE &middot; PAGE I OF II</p>
+        <h1>DENIS<br><span class="accent">MATEJCIK</span></h1>
+        <p class="chron-sub">Developer &middot; games &amp; software</p>
+      </header>
+
+      <div class="inventory chron-inv">
+        <div class="slot"><b>EMAIL</b><span><a href="mailto:matejcikdenis@gmail.com">matejcikdenis@gmail.com</a></span></div>
+        <div class="slot"><b>GITHUB</b><span><a href="https://github.com/Mild-Solvent">Mild-Solvent</a></span></div>
+        <div class="slot"><b>BASE</b><span>Slovakia / remote</span></div>
+      </div>
+
+      <div class="ornament" aria-hidden="true"><i></i><i></i><i></i></div>
+
+      <!-- ✏️ EDIT: about me. The first letter is drawn as an illuminated
+           capital next to the text, so the typed "I" is hidden (.dc-hide). -->
+      <div class="about">
+        <span class="dropcap" aria-hidden="true"><canvas id="dropcap-i"></canvas></span>
+        <p><span class="dc-hide">I</span>&rsquo;m a passionate developer, and a stubborn one: I&rsquo;m into games
+        and into software of any kind, and I never managed to pick a side &mdash; so I keep
+        building both.</p>
+        <p>Most of what I make starts the same way. Something annoyed me, or somebody
+        needed a thing and nobody was building it. gas.green began as a delivery idea and
+        turned into the project I&rsquo;ve stayed with longest. DAB exists because I wanted a map
+        with my friends on it and no server in the middle. Idle Master exists because a
+        machine had to stay awake overnight without eating 11&nbsp;GB of RAM.</p>
+        <p>In practice I&rsquo;m the one who sets up the server, writes the backend, draws the
+        sprite and then answers the support mail. Small teams, short loops, and I&rsquo;d rather
+        ship something rough on Friday and fix it on Monday than plan it for a month.</p>
+      </div>
+
+      <div class="ornament" aria-hidden="true"><i></i><i></i><i></i></div>
+
+      <p class="tl-cap">QUEST LOG &mdash; WHAT I BUILT, AND WHEN</p>
+
+      <!-- ✏️ EDIT: timeline rows. Colour classes: g / b / a / r / v -->
+      <div class="tl">
+
+        <div class="tl-row a">
+          <span class="tl-year">NOW</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://vkozi.com" target="_blank" rel="noopener">VKOZI.COM</a></h3>
+              <span class="tl-chip">CLIENT</span>
+            </div>
+            <p>Web for MAXIM&nbsp;74, a Slovak leather manufactory making belts for wholesale
+            partners and brands. Their catalogue, their story, and enquiries that actually
+            reach them.</p>
+            <p class="tl-stack">web &middot; B2B catalogue &middot; SEO</p>
+          </div>
+        </div>
+
+        <div class="tl-row g">
+          <span class="tl-year">NOW</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://gas.green" target="_blank" rel="noopener">GAS.GREEN</a></h3>
+              <span class="tl-chip">DELIVERY STARTUP</span>
+            </div>
+            <p>Customers, couriers and businesses on one delivery platform &mdash; ordering,
+            dispatch, tracking, the courier app, the business dashboard. My longest-running
+            project; I&rsquo;ve been on it since it was a landing page.</p>
+            <p class="tl-stack">TypeScript monorepo &middot; Go services &middot; Postgres / Supabase &middot; Android builds</p>
+          </div>
+        </div>
+
+        <div class="tl-row v">
+          <span class="tl-year">2026</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://github.com/Mild-Solvent/DAB" target="_blank" rel="noopener">DAB</a></h3>
+              <span class="tl-chip">ANDROID</span>
+            </div>
+            <p>A friends-only map that starts covered in fog and uncovers as you walk it.
+            Positions, chat and calls go phone to phone over WebRTC &mdash; no DAB server,
+            no account, and relays only ever see ciphertext.</p>
+            <p class="tl-stack">WebRTC &middot; end-to-end encryption &middot; offline map tiles</p>
+          </div>
+        </div>
+
+        <div class="tl-row b">
+          <span class="tl-year">2026</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://mild-solvent.github.io/experiment-echo/" target="_blank" rel="noopener">EXPERIMENT ECHO</a></h3>
+              <span class="tl-chip">UE 5</span>
+            </div>
+            <p>The sea slug game: about two hours of mind-controlling a nudibranch through
+            environmental puzzles, underwater. Built in Unreal, with its own site. Proof I&rsquo;ll
+            chase a weird idea all the way to something playable.</p>
+            <p class="tl-stack">Unreal Engine 5 &middot; level &amp; puzzle design</p>
+          </div>
+        </div>
+
+        <div class="tl-row a">
+          <span class="tl-year">2026</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://github.com/Mild-Solvent/Iddle-Master" target="_blank" rel="noopener">IDLE MASTER</a></h3>
+              <span class="tl-chip">C#</span>
+            </div>
+            <p>One small exe for a machine that has to stay awake but shouldn&rsquo;t burn 11&nbsp;GB
+            of RAM at 3am. Two buttons &mdash; boost now, or strip to vitals &mdash; and a sentry
+            that keeps it there.</p>
+            <p class="tl-stack">C# &middot; Windows APIs &middot; PowerShell</p>
+          </div>
+        </div>
+
+        <div class="tl-row r">
+          <span class="tl-year">2025</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3>AI AGENTS</h3>
+              <span class="tl-chip">B2B STARTUP</span>
+            </div>
+            <p>Building automation for B2B clients at an AI-agents startup: agent workflows,
+            tool and MCP integrations, and the unglamorous glue that makes an LLM actually
+            finish a job instead of describing it.</p>
+            <p class="tl-stack">LLM tooling &middot; MCP &middot; scrapers &middot; pipelines</p>
+          </div>
+        </div>
+
+        <div class="tl-row g">
+          <span class="tl-year">2025</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://aktivity.ceaeurope.sk/" target="_blank" rel="noopener">AKTIVITY.CEAEUROPE.SK</a></h3>
+              <span class="tl-chip">VUE</span>
+            </div>
+            <p>Trail guide for the DW klub &mdash; bike, run and hiking routes mapped around
+            you, with the routes searchable and the map usable on a phone in a forest.
+            Live and in use.</p>
+            <p class="tl-stack">Vue &middot; map tiles &middot; Postgres</p>
+          </div>
+        </div>
+
+        <div class="tl-row b">
+          <span class="tl-year">2025</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://ceaeurope.sk" target="_blank" rel="noopener">CEAEUROPE.SK</a></h3>
+              <span class="tl-chip">COMPANY WEB</span>
+            </div>
+            <p>Site and catalogue for a Slovak promo-goods company trading since 2014 &mdash;
+            products, enquiries, corporate events. The boring parts, done properly, for people
+            who actually depend on them.</p>
+            <p class="tl-stack">TypeScript &middot; Next.js &middot; PHP integrations</p>
+          </div>
+        </div>
+
+        <div class="tl-row v">
+          <span class="tl-year">ALWAYS</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3>MACHINES &amp; INFRA</h3>
+              <span class="tl-chip">HOMELAB</span>
+            </div>
+            <p>Remote desktop servers, a home cloud, Docker, Tailscale, Android tooling, and
+            whatever scripts the setup needs that week. If a thing has to run somewhere and
+            keep running, I enjoy being the one who makes that happen.</p>
+            <p class="tl-stack">Windows / Linux servers &middot; Docker &middot; Tailscale &middot; PowerShell</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="quest-continue">
+        <a class="bigbtn" id="go-levels" href="#levels">
+          <span>CONTINUE</span><span class="caret">&gt;&gt;</span>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="flagpost right" aria-hidden="true">
+      <canvas class="banner" id="bn-4"></canvas>
+      <canvas class="banner" id="bn-5"></canvas>
+      <canvas class="banner" id="bn-6"></canvas>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<div class="page" id="levels">
+<div class="sheet" id="sheet-levels">
 
   <div class="statusbar">
     <span>PLAYER 1</span>
@@ -384,7 +737,7 @@
       <div class="lvl-head">
         <span class="lvl-tag">LVL 4</span>
         <!-- ✏️ EDIT: project 4 title + chip -->
-        <h2><a href="https://github.com/Mild-Solvent" target="_blank" rel="noopener">SIDEQUESTS</a></h2>
+        <h2><a href="sidequests.html">SIDEQUESTS</a></h2>
         <span class="chip">FUN</span>
       </div>
       <!-- ✏️ EDIT: project 4 description -->
@@ -408,7 +761,8 @@
   </div>
 
   <div class="continue">
-    <a href="https://mild-solvent.github.io/CV/">CONTINUE?</a>
+    <a href="#top">&lt; PAGE 1</a>
+    <a href="sidequests.html">SIDEQUESTS &gt;</a>
   </div>
 
 </div>
@@ -535,7 +889,7 @@
      he catches it and walks on with it. Poses are the character only;
      whatever he carries is a separate prop pinned to his hands. */
   (function(){
-    var sheet = document.querySelector('.sheet');
+    var sheet = document.getElementById('sheet-levels');
     var track = document.getElementById('carry-track');
     var slot  = document.getElementById('gh-slot');
     var scene = document.getElementById('scene1');
@@ -2790,21 +3144,155 @@
     })();
   })();
 
+
+  /* ---- page 1: heraldic banners + the illuminated capital ----
+     Same 5px pixel grid as every character on page 2: each banner is a rod,
+     a cloth with a swallowtail, and a charge stamped in the middle. ---- */
+  (function(){
+    var INK = '#26281f', PAPER = '#f0f1e4', GOLD = '#d08a2e';
+    var css = getComputedStyle(document.documentElement);
+    function v(n){ return (css.getPropertyValue(n) || '').trim(); }
+    function darken(hex, f){
+      var n = parseInt(hex.slice(1), 16);
+      return 'rgb(' + Math.round(((n>>16)&255)*f) + ',' +
+                      Math.round(((n>>8)&255)*f) + ',' +
+                      Math.round((n&255)*f) + ')';
+    }
+    function paint(cv, grid, scale, pal){
+      var rows = grid.length, cols = grid[0].length;
+      cv.width = cols*scale; cv.height = rows*scale;
+      cv.style.width = cv.width+'px'; cv.style.height = cv.height+'px';
+      var ctx = cv.getContext('2d');
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(var y=0;y<rows;y++){
+        for(var x=0;x<cols;x++){
+          var ch = grid[y][x];
+          if(ch === '.') continue;
+          ctx.fillStyle = pal[ch] || INK;
+          ctx.fillRect(x*scale, y*scale, scale, scale);
+        }
+      }
+    }
+
+    /* charges: 7 cells wide, 'w' = cloth-white, 'g' = gold */
+    var CHARGE = {
+      sword:['...w...','...w...','...w...','...w...','...w...',
+             '.ggggg.','...g...','...g...','..ggg..'],
+      gear :['.w.w.w.','wwwwwww','ww...ww','w..g..w','ww...ww','wwwwwww','.w.w.w.'],
+      rack :['wwwwwww','wg...gw','wwwwwww','wg...gw','wwwwwww','wg...gw','wwwwwww',
+             '..w.w..','.wwwww.'],
+      bolt :['....ggg','...ggg.','..ggg..','.gggggg','..gggg.','...ggg.','..gg...',
+             '.gg....','.g.....'],
+      slug :['.w...w.','..w.w..','.wwwww.','wwgwgww','wwwwwww','.wwwww.'],
+      crown:['w.....w','w..w..w','w.www.w','wwwwwww','wgwgwgw','wwwwwww']
+    };
+
+    function banner(id, color, body, charge){
+      var cv = document.getElementById(id);
+      if(!cv || !color) return;
+      var rows = ['#############','#############'];
+      for(var i=0;i<body;i++) rows.push('.#dcccccccd#.');
+      rows.push('.#dccc.cccd#.');
+      rows.push('.#dcc...ccd#.');
+      rows.push('.#dc.....cd#.');
+      rows.push('.##.......##.');
+      var g = rows.map(function(r){ return r.split(''); });
+      var ch = CHARGE[charge];
+      if(ch){
+        var top = 2 + Math.floor((body - ch.length)/2);
+        for(var y=0;y<ch.length;y++){
+          for(var x=0;x<ch[y].length;x++){
+            var c = ch[y][x];
+            if(c !== '.' && g[top+y]) g[top+y][3+x] = c;
+          }
+        }
+      }
+      paint(cv, g.map(function(r){ return r.join(''); }), 5,
+            {'#':INK, 'c':color, 'd':darken(color,.72), 'w':PAPER, 'g':GOLD});
+    }
+
+    banner('bn-1', v('--green'),  26, 'sword');
+    banner('bn-2', v('--amber'),  20, 'gear');
+    banner('bn-3', v('--violet'), 26, 'rack');
+    banner('bn-4', v('--rose'),   20, 'bolt');
+    banner('bn-5', v('--blue'),   26, 'slug');
+    banner('bn-6', v('--amber'),  20, 'crown');
+
+    /* the illuminated capital: gilded frame, cloth panel, a serif I */
+    (function(){
+      var cv = document.getElementById('dropcap-i');
+      if(!cv) return;
+      var N = 20, g = [], x, y, i;
+      for(y=0;y<N;y++){
+        var row = [];
+        for(x=0;x<N;x++) row.push('c');
+        g.push(row);
+      }
+      for(y=0;y<N;y++) for(x=0;x<N;x++)
+        if(y<2 || x<2 || y>=N-2 || x>=N-2) g[y][x] = '#';
+      for(i=3;i<N-3;i++){ g[3][i]='g'; g[N-4][i]='g'; g[i][3]='g'; g[i][N-4]='g'; }
+      [[2,2],[2,N-4],[N-4,2],[N-4,N-4]].forEach(function(p){
+        for(y=0;y<2;y++) for(x=0;x<2;x++) g[p[0]+y][p[1]+x] = 'g';
+      });
+      var L = ['wwwwwwww','wwwwwwww','...ww...','...ww...','...ww...','...ww...',
+               '...ww...','...ww...','...ww...','...ww...','wwwwwwww','wwwwwwww'];
+      for(y=0;y<L.length;y++) for(x=0;x<8;x++)
+        if(L[y][x] !== '.') g[4+y][6+x] = 'w';
+      paint(cv, g.map(function(r){ return r.join(''); }), 4,
+            {'#':INK, 'c':v('--violet'), 'g':GOLD, 'w':PAPER});
+    })();
+
+    /* CONTINUE walks you down to the levels instead of jumping.
+       Hand-rolled tween: scroll-behavior:smooth is a no-op in some embedded
+       views, and a silent no-scroll is worse than a jump. */
+    var btn = document.getElementById('go-levels');
+    if(btn){
+      btn.addEventListener('click', function(ev){
+        var t = document.getElementById('levels');
+        if(!t) return;
+        ev.preventDefault();
+        var from = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var to = from + t.getBoundingClientRect().top - 12;
+        var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        if(to > max) to = max;
+        if(history.replaceState) history.replaceState(null, '', '#levels');
+        if(reduced || !window.requestAnimationFrame || Math.abs(to-from) < 4){
+          window.scrollTo(0, to); return;
+        }
+        var t0 = null, dur = 620, ran = false;
+        requestAnimationFrame(function step(ts){
+          ran = true;
+          if(t0 === null) t0 = ts;
+          var k = Math.min(1, (ts - t0)/dur);
+          var e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k+2,2)/2;   /* ease in-out */
+          window.scrollTo(0, from + (to-from)*e);
+          if(k < 1) requestAnimationFrame(step);
+        });
+        /* frames never arrive in a hidden tab — land there anyway */
+        setTimeout(function(){ if(!ran) window.scrollTo(0, to); }, 120);
+      });
+    }
+  })();
+
   /* ---- print fit: the last handler to run. By now html.printing is on
      and every scene has frozen, so measure the sheet as it will print and
      scale it — as one picture, line breaks and all — onto a single A4. ---- */
   (function(){
-    var sheet = document.querySelector('.sheet');
-    if(!sheet) return;
+    var pages = document.querySelectorAll('.page');
+    if(!pages.length) return;
     var PW = 793.7, PH = 1118.7;            /* 210mm × 296mm at 96dpi (see .page) */
     var PAD = 26;                           /* breathing room, px on the page */
     function fit(){
-      var W = sheet.offsetWidth, H = sheet.offsetHeight;
-      if(!W || !H) return;
-      var s = Math.min((PW - 2*PAD)/W, (PH - 2*PAD)/H);
-      var left = (PW - W*s)/2, top = (PH - H*s)/2;
-      sheet.style.setProperty('--print-tf',
-        'translate('+left.toFixed(2)+'px,'+top.toFixed(2)+'px) scale('+s.toFixed(4)+')');
+      for(var i=0;i<pages.length;i++){
+        var sheet = pages[i].querySelector('.sheet');
+        if(!sheet) continue;
+        var W = sheet.offsetWidth, H = sheet.offsetHeight;
+        if(!W || !H) continue;
+        var s = Math.min((PW - 2*PAD)/W, (PH - 2*PAD)/H);
+        var left = (PW - W*s)/2, top = (PH - H*s)/2;
+        sheet.style.setProperty('--print-tf',
+          'translate('+left.toFixed(2)+'px,'+top.toFixed(2)+'px) scale('+s.toFixed(4)+')');
+      }
     }
     window.addEventListener('beforeprint', fit);
     if(window.matchMedia){
