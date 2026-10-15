@@ -64,3 +64,10 @@ A workflow is included at `.github/workflows/deploy-cv.yml`. To activate it:
 
 The site will appear at `https://<username>.github.io/<repo>/`
 (likely `https://mild-solvent.github.io/CV/`).
+
+## ATS version (for upload forms)
+
+[`ats.html`](ats.html) is a plain one-column copy of the CV for Workday, Greenhouse,
+Lever, Taleo and other "upload your CV" forms, exported as
+[`Denis-Matejcik-CV-ATS.pdf`](Denis-Matejcik-CV-ATS.pdf). Keep its facts in sync with
+the pixel CV. Why it exists and how to tailor it per job: [`../ATS/README.md`](../ATS/README.md).
