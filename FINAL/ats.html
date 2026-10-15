@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Denis Matejcik — Full-Stack Developer — CV</title>
+<meta name="description" content="Plain, ATS-friendly CV of Denis Matejcik, full-stack developer (TypeScript, Go, PostgreSQL, Android, AI agents, Unreal Engine 5).">
+<!--
+  ATS version of the CV. One column, real text, standard headings, dates on every
+  job — so Workday / Greenhouse / Lever / Taleo parse it cleanly. Keep it plain:
+  no tables, icons, columns or images. The pixel CV (index.html) is for humans.
+  Export: open in Chrome → Ctrl+P → A4, margins Default → Save as
+  Denis-Matejcik-CV-ATS.pdf. See ../ATS/README.md for why.
+  Phone number is deliberately left out (this site is public) — add it in the
+  copy you upload if a form asks.
+-->
+<style>
+  :root{--ink:#1b1b1b;--muted:#555;--rule:#c8c8c8;--bg:#fff;--link:#1a4f8a}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8e8e8;--muted:#a8a8a8;--rule:#444;--bg:#141414;--link:#8bb8ee}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:10.5pt/1.42 Arial,Helvetica,sans-serif}
+  main{max-width:780px;margin:0 auto;padding:32px 16px}
+  h1{font-size:20pt;margin:0 0 2px}
+  .headline{font-size:11.5pt;font-weight:bold;margin:0 0 6px}
+  .contact{color:var(--muted);margin:0 0 4px}
+  a{color:var(--link)}
+  h2{font-size:11.5pt;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--rule);padding-bottom:2px;margin:16px 0 6px}
+  h3{font-size:10.5pt;margin:10px 0 0}
+  .meta{color:var(--muted);margin:0 0 3px}
+  ul{margin:2px 0 0;padding-left:18px}
+  li{margin:1px 0}
+  p{margin:3px 0}
+  @page{size:A4;margin:14mm 15mm}
+  @media print{
+    :root{--ink:#000;--muted:#333;--rule:#999;--bg:#fff;--link:#000}
+    body{font-size:10pt}
+    main{padding:0;max-width:none}
+    a{text-decoration:none}
+    h2,h3{break-after:avoid}
+    li{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Denis Matejcik</h1>
+<p class="headline">Full-Stack Developer — TypeScript, Go, PostgreSQL, Android, AI Agents</p>
+<p class="contact">Slovakia, EU · Remote (worldwide) or on-site Bratislava / Trenčín · EU citizen, no sponsorship needed</p>
+<p class="contact">Email: matejcikdenis@gmail.com · LinkedIn: <a href="https://www.linkedin.com/in/denis-matejcik">linkedin.com/in/denis-matejcik</a> · GitHub: <a href="https://github.com/Mild-Solvent">github.com/Mild-Solvent</a> · Portfolio: <a href="https://mild-solvent.github.io/CV/">mild-solvent.github.io/CV</a></p>
+
+<h2>Summary</h2>
+<p>Full-stack software developer who owns the whole stack: server, backend, frontend, mobile and deployment.
+Currently building gas.green, a delivery platform (TypeScript monorepo, Go services, PostgreSQL / Supabase, Android).
+Previously built AI agent automation and MCP integrations for B2B clients at an AI-agents startup (teamday.ai).
+Also ships games in Unreal Engine 5 and runs Linux / Windows server infrastructure with Docker.
+Prefers small teams and short release cycles.</p>
+
+<h2>Skills</h2>
+<p><strong>Languages:</strong> TypeScript, JavaScript, Go (Golang), C#, Python, SQL, PHP, PowerShell</p>
+<p><strong>Frontend:</strong> React, React Native, Next.js, Vue.js, Nuxt.js, HTML, CSS</p>
+<p><strong>Backend &amp; data:</strong> Node.js, Go services, REST APIs, PostgreSQL, Supabase, Firebase, web scraping, data pipelines</p>
+<p><strong>AI:</strong> Large Language Models (LLM), AI agents, agent workflows, Model Context Protocol (MCP), tool integrations</p>
+<p><strong>Mobile:</strong> Android, React Native, WebRTC, end-to-end encryption (E2EE)</p>
+<p><strong>DevOps &amp; infrastructure:</strong> Docker, Linux, Windows Server, Git, GitHub, GitHub Actions, Google Cloud Platform (GCP), Tailscale</p>
+<p><strong>Games:</strong> Unreal Engine 5 (UE5), level design, puzzle design</p>
+<p><strong>Other:</strong> SEO, monorepos, Windows APIs</p>
+
+<h2>Experience</h2>
+
+<h3>Full-Stack Developer — gas.green</h3>
+<p class="meta">Jan 2024 – Present · Slovakia / Remote</p>
+<ul>
+  <li>Build a delivery platform that connects customers, couriers and businesses: ordering, dispatch, live tracking, courier app and business dashboard.</li>
+  <li>Develop in a TypeScript monorepo with Go backend services and PostgreSQL / Supabase; ship Android builds of the courier app.</li>
+  <li>Joined when the product was a landing page and grew it into a working platform across web and mobile.</li>
+</ul>
+
+<h3>Senior Software Development Engineer — teamday.ai</h3>
+<p class="meta">Jun 2025 – Sep 2025 · Bratislava, Slovakia</p>
+<ul>
+  <li>Built AI agent workflows that automate business processes for B2B clients.</li>
+  <li>Integrated LLMs with external tools and data through Model Context Protocol (MCP) servers, scrapers and data pipelines.</li>
+  <li>Wrote the glue code that makes an LLM agent actually finish a job instead of describing it.</li>
+</ul>
+
+<h3>Web Developer &amp; IT — ceaeurope.sk (CEA Europe)</h3>
+<p class="meta">2017 – 2025 · Nová Dubnica, Slovakia</p>
+<ul>
+  <li>Built and maintained the company website and product catalogue for a promotional-goods and corporate-events business (TypeScript, Next.js, PHP integrations).</li>
+  <li>Built aktivity.ceaeurope.sk, a bike, running and hiking trail guide with searchable routes and mobile maps (Vue.js, PostgreSQL, map tiles), live and in use.</li>
+  <li>Deployed an AI sales agent; handled enquiry forms, integrations, IT support and graphics.</li>
+</ul>
+
+<h2>Projects</h2>
+
+<h3>vkozi.com — Client website (2026)</h3>
+<p>Website and B2B catalogue for MAXIM 74, a Slovak leather manufacturer: product catalogue, brand story, enquiry flow, SEO.</p>
+
+<h3>DAB — Android app (2026)</h3>
+<p>Peer-to-peer friends map: location, chat and calls go phone to phone over WebRTC with end-to-end encryption and offline map tiles. No server, no accounts.</p>
+
+<h3>Experiment Echo — Unreal Engine 5 game (2026)</h3>
+<p>About two hours of underwater environmental puzzles, playing as a mind-controlled sea slug. Level and puzzle design in UE5. <a href="https://mild-solvent.github.io/experiment-echo/">mild-solvent.github.io/experiment-echo</a></p>
+
+<h3>Idle Master — Windows utility (2026)</h3>
+<p>Small C# tool that keeps a machine awake without wasting RAM, using Windows APIs and PowerShell.</p>
+
+<h3>Homelab &amp; infrastructure (ongoing)</h3>
+<p>Remote desktop servers, a home cloud, Docker containers, Tailscale networking, Android tooling and PowerShell automation on Windows and Linux.</p>
+
+<h2>Education</h2>
+<p><strong>Computer Science</strong> — Middlesex University, London, United Kingdom</p>
+<p><strong>Mechatronics</strong> — Secondary Technical School (SPŠ), Dubnica nad Váhom, Slovakia — maturita</p>
+
+<h2>Certifications</h2>
+<p>EU open-category A1/A3 UAS remote pilot (drones)</p>
+
+<h2>Languages</h2>
+<p>English (C2), Slovak (native), Czech (B2)</p>
+
+</main>
+</body>
+</html>
