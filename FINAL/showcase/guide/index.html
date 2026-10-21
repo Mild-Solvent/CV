@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude for non-engineers</title>
+<meta name="description" content="A one-page guide for a non-technical colleague on day one, plus the five-day coaching plan I would run with one person. Denis Matejcik, October 2026.">
+<!--
+  Source: ../../../guides/claude-for-non-engineers.md (Markdown). Edit there, then mirror here.
+  Public page: no phone number, date of birth or address anywhere in this file.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfaf7;
+    --surface:#ffffff;
+    --ink:#1f1d1a;
+    --muted:#5e5a53;
+    --rule:#dcd7cd;
+    --accent:#1d5a8a;
+    --accent-ink:#ffffff;
+    --code-bg:#f1efe9;
+    --note-bg:#f3f0e8;
+    --warn-bg:#fdf1ec;
+    --warn-rule:#e3b9a8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17181a;
+      --surface:#1f2124;
+      --ink:#ebe8e1;
+      --muted:#a8a39a;
+      --rule:#3a3d42;
+      --accent:#8fbfe6;
+      --accent-ink:#0f1a24;
+      --code-bg:#24272b;
+      --note-bg:#22251f;
+      --warn-bg:#2b201d;
+      --warn-rule:#5a3d33;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17181a;
+    --surface:#1f2124;
+    --ink:#ebe8e1;
+    --muted:#a8a39a;
+    --rule:#3a3d42;
+    --accent:#8fbfe6;
+    --accent-ink:#0f1a24;
+    --code-bg:#24272b;
+    --note-bg:#22251f;
+    --warn-bg:#2b201d;
+    --warn-rule:#5a3d33;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.6 "Source Serif 4",Georgia,"Times New Roman",serif;
+    overflow-x:hidden;
+  }
+  main{max-width:720px;margin:0 auto;padding:40px 16px 64px}
+  nav.crumbs{font-family:Inter,system-ui,sans-serif;font-size:14px;color:var(--muted);margin:0 0 28px}
+  nav.crumbs a{color:var(--accent);text-decoration:none}
+  nav.crumbs a:hover{text-decoration:underline}
+  nav.crumbs span{margin:0 6px}
+  h1{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:30px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{font-family:Inter,system-ui,sans-serif;color:var(--muted);font-size:15px;margin:0 0 20px}
+  h2{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:21px;line-height:1.3;margin:40px 0 12px;padding-top:18px;border-top:1px solid var(--rule)}
+  h3{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:17px;margin:22px 0 6px}
+  p{margin:0 0 14px}
+  a{color:var(--accent)}
+  ol,ul{margin:0 0 14px;padding-left:24px}
+  li{margin:0 0 8px}
+  li ul,li ol{margin-top:6px}
+  .note{background:var(--note-bg);border-left:3px solid var(--accent);padding:12px 16px;margin:0 0 20px;font-size:16px}
+  .note p{margin:0}
+  .warn{background:var(--warn-bg);border:1px solid var(--warn-rule);border-radius:6px;padding:12px 16px;margin:0 0 16px}
+  .warn p:last-child{margin:0}
+  pre{
+    background:var(--code-bg);border:1px solid var(--rule);border-radius:6px;
+    padding:14px 16px;margin:0 0 16px;overflow-x:auto;
+    font:14px/1.5 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    white-space:pre-wrap;word-break:break-word;
+  }
+  code{font:0.92em "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+  pre code{background:none;padding:0;font-size:inherit}
+  .tablewrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px;line-height:1.45;background:var(--surface)}
+  th,td{border:1px solid var(--rule);padding:10px 12px;vertical-align:top;text-align:left}
+  th{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:14px;background:var(--note-bg)}
+  th.rowhead,td.rowhead{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:14px;white-space:nowrap;background:var(--note-bg)}
+  .day{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;margin:0 0 14px;background:var(--surface)}
+  .day h3{margin:0 0 8px}
+  .day p{margin:0 0 6px}
+  .day p:last-child{margin:0}
+  .day .label{font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:6px}
+  .tokens{font-variant-numeric:tabular-nums}
+  footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-family:Inter,system-ui,sans-serif;font-size:14px;color:var(--muted)}
+  footer a{color:var(--accent)}
+  @media (max-width: 640px){
+    .tablewrap{overflow:visible}
+    table{min-width:0;display:block;border:0;background:none}
+    thead{display:none}
+    tbody,tr,td{display:block;width:100%}
+    tr{border:1px solid var(--rule);border-radius:8px;margin:0 0 12px;background:var(--surface);overflow:hidden}
+    td{border:0;border-top:1px solid var(--rule);padding:10px 12px}
+    td.rowhead{border-top:0;white-space:normal;font-size:15px}
+    td[data-col]::before{content:attr(data-col);display:block;font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:13px;color:var(--muted);margin:0 0 3px}
+  }
+  @page{size:A4;margin:16mm 15mm}
+  @media print{
+    body{background:#fff;color:#000;font-size:11pt;line-height:1.45}
+    main{max-width:none;padding:0}
+    nav.crumbs,footer .screen-only{display:none}
+    h2{break-after:avoid;margin-top:22px;padding-top:10px}
+    h3{break-after:avoid}
+    .day,pre,.warn,.note,tr{break-inside:avoid}
+    a{color:#000;text-decoration:none}
+    pre{white-space:pre-wrap;border-color:#999}
+    table{min-width:0;font-size:10pt}
+    th,td{border-color:#999}
+    .tablewrap{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<main>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">CV</a><span>/</span><a href="../">Case studies</a><span>/</span>Guide</nav>
+
+<h1>Claude for non-engineers</h1>
+<p class="sub">A one-page guide and a five-day coaching plan. Denis Matejcik, October 2026.</p>
+
+<div class="note"><p>I wrote this in October 2026 as the guide I would hand a new colleague. If you are reading it as part of my Epoch application: the coaching plan is what I would run in week one.</p></div>
+
+<h2 id="good-at">What Claude is good at, and the two things it is bad at</h2>
+<p>Claude is good at work that starts from text you already have. Give it a messy document and it will summarise, restructure, draft, compare or explain it. It is patient with rewrites, and it follows a format when you ask for one. It is bad at two things. First, recent facts: it has a training cutoff and does not know what happened last week unless you paste it in. Second, your internal context: it does not know your team, your projects or your conventions unless you tell it. Most bad answers come from one of these two gaps. Most good answers come from giving it the right material first.</p>
+
+<h2 id="first-30">Your first 30 minutes: turn a messy meeting note into a decision log</h2>
+<p>Ten minutes to do it, ten to check it, ten to fix and file it.</p>
+<ol>
+  <li>Open claude.ai and start a new chat. If you only have Claude in Slack, open a direct message with it instead.</li>
+  <li>Find a real meeting note from the last two weeks, one with decisions in it. Remove anything you would not put in an email to the whole team (see <a href="#never-paste">What to never paste in</a>).</li>
+  <li>Paste this prompt, then paste the note under it:
+<pre><code>I am going to paste a raw meeting note. Turn it into a decision log.
+
+Format:
+- A table with four columns: Decision, Owner, Due date, Source line (quote the line from the note).
+- Below the table, a list titled "Open questions": things discussed but not decided.
+- Below that, a list titled "Unclear": lines in the note you could not interpret. Quote them.
+
+Rules:
+- Use only what is in the note. Do not add decisions, owners or dates that are not there.
+- If an owner or date is missing, write "not stated".
+- Keep the wording of each decision close to the original.
+
+The note:</code></pre></li>
+  <li>Read the result against the note. Three checks. Every row quotes a real line from the note. Every "not stated" is really missing from the note. Every decision in the note has a row in the table.</li>
+  <li>If something is wrong, say so in the same chat. For example: "Row 3 was a suggestion, not a decision. Remove it." Do not start a new chat.</li>
+  <li>Ask for the final version in the format you need. For example: "Give me the table as plain text I can paste into Slack."</li>
+  <li>Paste it where your decision logs live. Add one line: "Drafted with Claude, checked by [your name]."</li>
+</ol>
+<p>What a good result looks like: four to eight rows, every row traceable to the note, and honest "not stated" cells. The "Unclear" list is not empty. A messy note always has unclear lines. If that list is empty, be suspicious and read the note again.</p>
+
+<h2 id="habits">Five habits that make answers reliable</h2>
+<ol>
+  <li><strong>Give context first.</strong> "I work in operations at a small research organisation. This is a draft vendor contract." Then the question.</li>
+  <li><strong>Ask for the format.</strong> "Answer as a table with three columns: option, cost, risk."</li>
+  <li><strong>Ask it to show its sources or say "I don't know".</strong> "Quote the line you are relying on. If the document does not say, write 'not in the document'."</li>
+  <li><strong>Iterate in the same thread.</strong> "Same table, but drop the risk column and sort by cost." A new chat forgets everything you gave it.</li>
+  <li><strong>Verify numbers and names yourself.</strong> Every figure, date and person's name gets checked against the source before it leaves your hands.</li>
+</ol>
+
+<h2 id="never-paste">What to never paste in</h2>
+<div class="warn">
+<ul>
+  <li>Passwords, API keys, access tokens, login links. Nothing that lets someone in.</li>
+  <li>Personal data of other people: home addresses, health, salaries, ID numbers, private messages. A colleague's name in a meeting note is fine. Their personal life is not.</li>
+  <li>Anything under an NDA or a confidentiality agreement, unless the tool has been approved for that data. Approval is per tool: a personal claude.ai account and the company workspace are not the same thing.</li>
+  <li>Unpublished results or data you were asked to keep internal, unless the tool is approved for it.</li>
+</ul>
+<p>When unsure, ask me, the AI enablement person, before pasting. It takes one Slack message. A two-minute wait is cheaper than a leaked document.</p>
+</div>
+
+<h2 id="which">When to use which</h2>
+<div class="tablewrap">
+<table>
+  <thead>
+    <tr><th></th><th>Chat (claude.ai)</th><th>Claude in Slack</th><th>Claude Code</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="rowhead">Good for</td>
+      <td data-col="Chat (claude.ai)">Your own documents: drafting, summarising, rewriting, explaining. Long back-and-forth on one task.</td>
+      <td data-col="Claude in Slack">Quick questions where the team should see the answer. Questions about internal documents it is connected to.</td>
+      <td data-col="Claude Code">Getting a tool built: a script, a bot, a report that runs every week. Changing something in a code repository.</td>
+    </tr>
+    <tr>
+      <td class="rowhead">Not for</td>
+      <td data-col="Chat (claude.ai)">Answers the whole team needs. Facts about internal systems it is not connected to.</td>
+      <td data-col="Claude in Slack">Long documents and long edits. Sensitive data, because the channel is shared.</td>
+      <td data-col="Claude Code">One-off questions. Anything you do not want to exist as a tool afterwards.</td>
+    </tr>
+    <tr>
+      <td class="rowhead">Who helps you</td>
+      <td data-col="Chat (claude.ai)">Me, for prompts and habits. The shared prompt library.</td>
+      <td data-col="Claude in Slack">Me, for what it is connected to and what it can see.</td>
+      <td data-col="Claude Code">Me. Describe the task in plain words; I direct the coding agent, or sit with you while you do. You do not need to code.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="cost">Cost, in plain numbers</h2>
+<p>Usage is measured in tokens. A token is roughly three quarters of an English word. "Please summarise this note" is about six tokens. A one-page document is about <span class="tokens">500 to 700</span> tokens. A 30-page report is about <span class="tokens">15,000 to 25,000</span> tokens. A long thread where you keep pasting documents can reach <span class="tokens">100,000</span> tokens, because everything in the thread is read again on every reply.</p>
+<p>Chat seats are a flat monthly fee per person, so your chatting does not add cost. Claude in Slack and the automations run on the API, which bills per token. Rates are quoted per million tokens and differ by model: the everyday model costs a few dollars per million, the strongest roughly twice that, the smallest well under a dollar. Ask me for the current rate card before you plan a big job. Summarising a 30-page report with the everyday model costs a few cents. Reading a thousand such reports costs tens of dollars. These rates change, so ask me for the current rate card before you plan anything large.</p>
+<p><strong>The one rule:</strong> nobody gets in trouble for spend on real work. If you plan a big batch job, hundreds of documents or something that runs every hour, tell me first. I will check the model, the cost and whether there is a cheaper way.</p>
+
+<h2 id="plan">The 5-day coaching plan</h2>
+<p>One person, 20 minutes a day, same time each day, screen shared. Every day's task comes from their real work that week, not from an exercise sheet. I have not run this plan with anyone yet. It is what I will run in week one, and I will change it after the first person.</p>
+<p><strong>Before day 1</strong> (five minutes, by message): the person sends me one thing they did last week that took over an hour and felt mechanical.</p>
+
+<div class="day">
+  <h3>Day 1: one document in, one result out</h3>
+  <p><span class="label">Task</span>The "first 30 minutes" walk-through above, on their own document.</p>
+  <p><span class="label">Success check</span>They can point from every row of the result to a line in the source.</p>
+  <p><span class="label">I write down</span>What the document was, where the prompt failed, and whether the prompt goes into the shared library as is or with changes.</p>
+</div>
+<div class="day">
+  <h3>Day 2: context and format</h3>
+  <p><span class="label">Task</span>A question from their work where the first answer came back generic. Fix it by giving context and asking for a format.</p>
+  <p><span class="label">Success check</span>The second answer is usable without editing.</p>
+  <p><span class="label">I write down</span>What context they had to type, and whether it belongs in a shared project or system prompt so nobody types it again.</p>
+</div>
+<div class="day">
+  <h3>Day 3: checking</h3>
+  <p><span class="label">Task</span>Ask Claude something from their own domain they already know the answer to, with numbers in it. Find the mistakes.</p>
+  <p><span class="label">Success check</span>They find at least one thing to verify and verify it against a source.</p>
+  <p><span class="label">I write down</span>Which kinds of errors showed up, and whether a "quote your source" line becomes a default in the shared prompts.</p>
+</div>
+<div class="day">
+  <h3>Day 4: Slack or Code</h3>
+  <p><span class="label">Task</span>If they need answers the team can see, run day 1's task in Claude in Slack. If they described a repeatable task before day 1, we write the spec for it together in plain words: input, output, what "done" means.</p>
+  <p><span class="label">Success check</span>A Slack thread the team can read, or a spec of five lines or fewer.</p>
+  <p><span class="label">I write down</span>Whether the task is worth building (how often it happens, how long by hand, who else has it). That note goes into my backlog ranked by expected value.</p>
+</div>
+<div class="day">
+  <h3>Day 5: their own task, unaided</h3>
+  <p><span class="label">Task</span>They pick the task. I watch and say nothing until the end.</p>
+  <p><span class="label">Success check</span>A checked result in 20 minutes without my help.</p>
+  <p><span class="label">I write down</span>What they still asked me, which of the five habits they skipped, and what I add to this guide.</p>
+</div>
+
+<p><strong>What you get at the end of the week:</strong> one prompt that works on your real documents, saved in the shared library under your name. Your own checklist for verifying answers. A clear answer on which tool to use for what. If you had a repeatable task, a written spec I take to a coding agent. What I get is a note per day on what blocked you, which goes into this guide and the shared prompts.</p>
+
+<footer>
+  <p>Denis Matejcik, October 2026. <span class="screen-only">Back to the <a href="../">case studies</a> or the <a href="../../">CV</a>.</span></p>
+</footer>
+</main>
+</body>
+</html>
