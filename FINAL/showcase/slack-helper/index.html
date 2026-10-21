@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude-in-Slack helper</title>
+<meta name="description" content="A runnable Slack bot whose brain is Claude Code headless with an MCP server over a markdown knowledge base. Recorded demo, a real 12-question eval scorecard, cost per answer, run-book and limitations.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Claude-in-Slack helper">
+<meta property="og:description" content="A Slack bot that answers staff questions from internal docs, cites its source and refuses when the docs do not cover it. Real eval scorecard, real costs, honest limitations.">
+<meta property="og:url" content="https://mild-solvent.github.io/CV/showcase/slack-helper/">
+<meta property="og:site_name" content="Denis Matejcik">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://mild-solvent.github.io/CV/showcase/slack-helper/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#fbfaf7;
+    --surface:#ffffff;
+    --ink:#1c1b19;
+    --ink-2:#4a4844;
+    --muted:#6f6c66;
+    --rule:#dcd9d2;
+    --rule-soft:#ebe8e1;
+    --accent:#0e6b53;
+    --accent-ink:#0b573f;
+    --accent-soft:#e3f1ea;
+    --warn:#b4531b;
+    --warn-soft:#f9e9df;
+    --blocked:#5a5f9e;
+    --blocked-soft:#e7e8f5;
+    --code-bg:#f1efe9;
+    --shadow:0 1px 2px rgba(20,18,14,.06);
+    --on-mark:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#141516;
+      --surface:#1c1e20;
+      --ink:#ebe9e4;
+      --ink-2:#c3c0b9;
+      --muted:#9b978f;
+      --rule:#33363a;
+      --rule-soft:#282b2e;
+      --accent:#5fd3ad;
+      --accent-ink:#8ae4c6;
+      --accent-soft:#1a2e28;
+      --warn:#f0a070;
+      --warn-soft:#3a2619;
+      --blocked:#a9adef;
+      --blocked-soft:#26284a;
+      --code-bg:#24272a;
+      --shadow:none;
+      --on-mark:#141516;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141516;
+    --surface:#1c1e20;
+    --ink:#ebe9e4;
+    --ink-2:#c3c0b9;
+    --muted:#9b978f;
+    --rule:#33363a;
+    --rule-soft:#282b2e;
+    --accent:#5fd3ad;
+    --accent-ink:#8ae4c6;
+    --accent-soft:#1a2e28;
+    --warn:#f0a070;
+    --warn-soft:#3a2619;
+    --blocked:#a9adef;
+    --blocked-soft:#26284a;
+    --code-bg:#24272a;
+    --shadow:none;
+    --on-mark:#141516;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:17px;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:hover{color:var(--accent-ink)}
+  main{max-width:760px;margin:0 auto;padding:40px 16px 56px}
+
+  /* header */
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;color:var(--muted);margin-bottom:36px;flex-wrap:wrap}
+  .topbar a{color:var(--muted);text-decoration:none}
+  .topbar a:hover{color:var(--accent)}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px;margin:0 0 10px}
+  .px{display:inline-block;width:12px;height:12px;flex:none;
+      background:
+        linear-gradient(var(--accent),var(--accent)) 0 0/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 8px 0/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 4px 4px/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 0 8px/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 8px 8px/4px 4px no-repeat}
+  h1{font-size:clamp(30px,5.2vw,40px);line-height:1.15;letter-spacing:-.015em;margin:0 0 14px;font-weight:600}
+  .byline{color:var(--muted);font-size:15px;margin:0 0 22px}
+  .lead{font-size:20px;line-height:1.5;color:var(--ink);margin:0 0 28px}
+  .lead strong{font-weight:600}
+
+  nav.contents{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:14px 0;margin:0 0 44px}
+  nav.contents ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;font-size:15px}
+  nav.contents a{text-decoration:none;color:var(--ink-2)}
+  nav.contents a:hover{color:var(--accent)}
+  nav.contents .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-right:8px}
+  @media (max-width:520px){nav.contents ol{grid-template-columns:1fr}}
+
+  /* sections */
+  section{margin:0 0 56px}
+  h2{font-size:26px;line-height:1.25;letter-spacing:-.01em;margin:0 0 6px;font-weight:600}
+  h2 .n{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent);display:block;margin-bottom:8px;letter-spacing:.06em}
+  h3{font-size:18.5px;margin:30px 0 8px;font-weight:600}
+  h4{font-size:16px;margin:22px 0 6px;font-weight:600}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 16px;padding-left:22px}
+  li{margin:0 0 6px}
+  li::marker{color:var(--muted)}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 18px}
+  .note{font-size:15px;color:var(--ink-2);border-left:3px solid var(--rule);padding:4px 0 4px 14px;margin:18px 0}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+  pre{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.55;background:var(--code-bg);border:1px solid var(--rule-soft);border-radius:8px;padding:14px 16px;margin:14px 0 18px;overflow-x:auto;-webkit-overflow-scrolling:touch;color:var(--ink)}
+  pre code{background:none;padding:0;font-size:inherit}
+  pre .c{color:var(--muted)}
+
+  /* figures */
+  figure{margin:24px 0}
+  figure svg{display:block;width:100%;height:auto;margin:0 auto}
+  figure.flow svg{max-width:540px}
+  figcaption{font-size:14px;color:var(--muted);margin-top:10px;text-align:center}
+  svg text{font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:var(--ink)}
+  svg .box{fill:var(--surface);stroke:var(--rule);stroke-width:1.2}
+  svg .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+  svg .box.me{fill:var(--code-bg);stroke:var(--rule)}
+  svg .bt{font-size:12px;font-weight:600;fill:var(--ink)}
+  svg .bs{font-size:10.5px;fill:var(--ink-2)}
+  svg .bm{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--ink-2)}
+  svg .edge{font-size:9.5px;fill:var(--muted)}
+  svg .arrow{stroke:var(--muted);stroke-width:1.4;fill:none}
+  svg .ahead{fill:var(--muted)}
+
+  /* tables */
+  .tw{overflow-x:auto;margin:18px 0 22px;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.45}
+  th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--rule-soft)}
+  th{font-size:12.5px;font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--muted);letter-spacing:.03em;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.k{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+  tr.total td{font-weight:600}
+  @media (max-width:600px){
+    th{white-space:normal}
+    table.stack thead{display:none}
+    table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+    table.stack tr{border:1px solid var(--rule);border-radius:8px;padding:6px 12px 8px;margin:0 0 10px;background:var(--surface)}
+    table.stack td{border:0;padding:4px 0;white-space:normal;text-align:left}
+    table.stack td.num{text-align:left}
+    table.stack td[data-l]::before{content:attr(data-l);display:block;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);letter-spacing:.03em;margin-bottom:1px}
+    table.stack td.k{font-size:12px;padding-top:6px}
+    table.stack td.name{font-weight:600;padding-top:2px}
+    table.stack tr.total{background:var(--code-bg)}
+  }
+  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.03em;padding:2px 7px;border-radius:4px;white-space:nowrap;vertical-align:middle}
+  .pill.keep{background:var(--accent-soft);color:var(--accent-ink)}
+  .pill.retire{background:var(--warn-soft);color:var(--warn)}
+  .pill.blocked{background:var(--blocked-soft);color:var(--blocked)}
+  .pill.plain{background:var(--code-bg);color:var(--ink-2)}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+  .stat{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
+  .stat .v{font-size:28px;font-weight:600;line-height:1.1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+  @media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat .v{font-size:24px}}
+
+  /* slack thread */
+  .thread{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:4px 16px;margin:18px 0 10px;box-shadow:var(--shadow)}
+  .thread .hd{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);letter-spacing:.03em;padding:10px 0 8px;border-bottom:1px solid var(--rule-soft)}
+  .msg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--rule-soft)}
+  .msg.first{border-top:0}
+  .av{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex:none}
+  .av.u{background:var(--code-bg);color:var(--ink-2)}
+  .av.b{background:var(--accent);color:var(--on-mark)}
+  .who{font-weight:600;font-size:15px;line-height:1.3;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .who .app{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;background:var(--code-bg);color:var(--muted);padding:1px 5px;border-radius:3px;font-weight:500}
+  .msg .body{font-size:15.5px;line-height:1.55;margin:3px 0 0;overflow-wrap:anywhere}
+  .msg .body b{font-weight:600}
+  .msg .src{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);margin-top:8px;overflow-wrap:anywhere}
+  .msg .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .msg .meta .pill{font-size:11px}
+
+  /* footer */
+  footer{border-top:1px solid var(--rule);padding-top:22px;margin-top:20px;font-size:15px;color:var(--muted)}
+  footer ul{list-style:none;padding:0;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px 22px}
+  footer a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--rule)}
+  footer a:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* print */
+  @page{size:A4;margin:15mm 14mm}
+  @media print{
+    :root{--bg:#fff;--surface:#fff;--ink:#111;--ink-2:#333;--muted:#555;--rule:#bbb;--rule-soft:#ddd;--accent:#0b573f;--accent-ink:#0b573f;--accent-soft:#eaf3ee;--warn:#9a4312;--warn-soft:#f6e6da;--blocked:#464b8c;--blocked-soft:#e3e4f2;--code-bg:#f0f0f0;--shadow:none;--on-mark:#fff}
+    body{font-size:11pt;line-height:1.45;background:#fff}
+    main{max-width:none;padding:0}
+    .topbar{display:none}
+    nav.contents{display:none}
+    h1{font-size:24pt}
+    h2{font-size:16pt;break-after:avoid}
+    h3,h4{break-after:avoid}
+    section{margin-bottom:26pt}
+    .lead{font-size:13pt}
+    figure,.stat,.msg,tr{break-inside:avoid}
+    table{break-inside:auto}
+    figure.flow svg{max-width:380px}
+    .tw{overflow:visible}
+    pre{white-space:pre-wrap;overflow:visible}
+    table{font-size:10pt}
+    .stats{grid-template-columns:repeat(4,1fr)}
+    a{color:inherit}
+    svg text{fill:#111}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<div class="topbar">
+  <a href="../">&larr; Case studies</a>
+  <span><a href="../../">CV</a></span>
+</div>
+
+<header>
+  <p class="eyebrow"><span class="px" aria-hidden="true"></span>Project</p>
+  <h1>Claude-in-Slack helper</h1>
+  <p class="lead">A Slack bot that answers staff questions from a small internal knowledge base, cites the document it used, and says "I don't know" when the docs do not cover it.</p>
+  <p class="byline">Denis Matejcik &middot; built 21 Oct 2026 by directing Claude Code</p>
+</header>
+
+<nav class="contents" aria-label="Contents">
+  <ol>
+    <li><a href="#what"><span class="n">01</span>What it does</a></li>
+    <li><a href="#why"><span class="n">02</span>Why this design</a></li>
+    <li><a href="#arch"><span class="n">03</span>Architecture</a></li>
+    <li><a href="#demo"><span class="n">04</span>Recorded demo</a></li>
+    <li><a href="#evals"><span class="n">05</span>Evals</a></li>
+    <li><a href="#run"><span class="n">06</span>Run it yourself</a></li>
+    <li><a href="#prod"><span class="n">07</span>What I would watch in production</a></li>
+    <li><a href="#limits"><span class="n">08</span>Limitations</a></li>
+  </ol>
+</nav>
+
+<!-- 01 -->
+<section id="what">
+  <h2><span class="n">01</span>What it does</h2>
+  <p>Someone @mentions the bot in a channel or sends it a DM, and it replies in the thread with the answer and a <code>Sources:</code> line naming the policy document it read. Its brain is Claude Code run headlessly with an MCP server over seven markdown docs, the same setup staff already use at their desks, so the skills and prompts they share are the objects the bot runs on. When the docs do not cover the question it says "I don't know" and names the channel to ask, and when the question is ambiguous it asks which policy is meant instead of picking one.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">12/12</div><div class="l">eval questions passed in one real run: $0.3141, 102&nbsp;s</div></div>
+    <div class="stat"><div class="v">$0.025</div><div class="l">average per answer over 18 recorded calls, as reported by Claude Code</div></div>
+    <div class="stat"><div class="v">19</div><div class="l">unit tests passing, no model calls, under a second</div></div>
+    <div class="stat"><div class="v">~$22</div><div class="l">per month at 40 questions a day (estimate, list price)</div></div>
+  </div>
+  <p class="note">The organisation in the docs, "Orbit Research", is fictional. Every answer, cost and scorecard on this page is recorded output from real runs on 21 Oct 2026 with Claude Code 2.1.305 and the default model, Opus 5.5.</p>
+</section>
+
+<!-- 02 -->
+<section id="why">
+  <h2><span class="n">02</span>Why this design</h2>
+  <ul>
+    <li><b>Claude Code headless is the brain.</b> The bot is <code>claude -p</code> plus an MCP server. The skills, prompts and MCP servers that staff share in their own Claude Code sessions are the same objects the bot uses, so improving one improves both. There is no second bot framework to keep in sync, and one place to maintain.</li>
+    <li><b>The MCP server is the only door to the knowledge base.</b> Claude Code is launched with no built-in tools (<code>--tools ""</code>), only the three read-only MCP tools allowed, and <code>--permission-prompts none</code>. The worst a prompt injection in a Slack message can do is read the same policy docs anyone in the company can read. The knowledge base itself is plain markdown: correcting a policy is editing a file, with no embeddings, no index to rebuild and nothing to redeploy.</li>
+    <li><b>Refuse when the docs have no answer.</b> If the knowledge base does not cover the question, the reply is "I don't know, ask #it-help" rather than a guess, and an ambiguous question gets a clarifying question back. The eval checks all three rules on every run: fact found and source cited, refusal, clarification.</li>
+    <li><b>Feedback reactions are the keep-or-retire signal.</b> A thumbs up or thumbs down on a bot reply appends a line to <code>feedback.jsonl</code> with the question, the sources and the cost. A weekly <code>jq</code> over that file gives an accuracy signal without a dashboard, and it is the number that decides whether the tool stays.</li>
+  </ul>
+</section>
+
+<!-- 03 -->
+<section id="arch">
+  <h2><span class="n">03</span>Architecture</h2>
+  <figure class="flow">
+    <svg viewBox="0 0 360 338" role="img" aria-labelledby="arch-title arch-desc">
+      <title id="arch-title">Architecture of the Claude-in-Slack helper</title>
+      <desc id="arch-desc">A Slack mention or DM reaches a Bolt app in Socket Mode, which calls the brain: Claude Code run as claude -p with only the three MCP tools allowed. The brain talks over stdio to an MCP server exposing list_docs, search_docs and read_doc, which reads markdown files in kb/. Thumbs up and down reactions are logged by the Bolt app to feedback.jsonl, and the cost per answer is taken from Claude Code's output JSON.</desc>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="ahead"/>
+        </marker>
+      </defs>
+
+      <!-- Slack -->
+      <rect class="box me" x="8" y="6" width="210" height="46" rx="6"/>
+      <text class="bt" x="113" y="24" text-anchor="middle">Slack: @mention or DM</text>
+      <text class="bs" x="113" y="40" text-anchor="middle">reply in the thread, eyes while thinking</text>
+      <line x1="113" y1="52" x2="113" y2="70" class="arrow" marker-end="url(#ah)"/>
+
+      <!-- Bolt app -->
+      <rect class="box" x="8" y="72" width="210" height="46" rx="6"/>
+      <text class="bt" x="113" y="90" text-anchor="middle">helper/slack_app.py</text>
+      <text class="bs" x="113" y="106" text-anchor="middle">Bolt app, Socket Mode, threads</text>
+      <line x1="113" y1="118" x2="113" y2="136" class="arrow" marker-end="url(#ah)"/>
+      <!-- side: feedback -->
+      <line x1="218" y1="95" x2="230" y2="95" class="arrow" marker-end="url(#ah)"/>
+      <rect class="box" x="232" y="72" width="120" height="62" rx="6"/>
+      <text class="bt" x="292" y="89" text-anchor="middle">feedback.jsonl</text>
+      <text class="bs" x="292" y="103" text-anchor="middle">+1 / -1 on a reply</text>
+      <text class="bs" x="292" y="115" text-anchor="middle">logs the question,</text>
+      <text class="bs" x="292" y="127" text-anchor="middle">sources and cost</text>
+
+      <!-- brain -->
+      <rect class="box acc" x="8" y="138" width="210" height="58" rx="6"/>
+      <text class="bt" x="113" y="156" text-anchor="middle">helper/brain.py</text>
+      <text class="bs" x="113" y="171" text-anchor="middle">claude -p headless, Opus 5.5</text>
+      <text class="bs" x="113" y="185" text-anchor="middle">only the 3 MCP tools allowed</text>
+      <line x1="113" y1="196" x2="113" y2="214" class="arrow" marker-end="url(#ah)"/>
+      <text class="edge" x="121" y="209">stdio (MCP)</text>
+      <!-- side: cost -->
+      <line x1="218" y1="167" x2="230" y2="167" class="arrow" marker-end="url(#ah)"/>
+      <rect class="box" x="232" y="142" width="120" height="50" rx="6"/>
+      <text class="bt" x="292" y="159" text-anchor="middle">cost per answer</text>
+      <text class="bm" x="292" y="173" text-anchor="middle">total_cost_usd</text>
+      <text class="bs" x="292" y="185" text-anchor="middle">from the output JSON</text>
+
+      <!-- MCP server -->
+      <rect class="box" x="8" y="216" width="210" height="46" rx="6"/>
+      <text class="bt" x="113" y="234" text-anchor="middle">mcp_server/server.py</text>
+      <text class="bm" x="113" y="250" text-anchor="middle">list_docs · search_docs · read_doc</text>
+      <line x1="113" y1="262" x2="113" y2="280" class="arrow" marker-end="url(#ah)"/>
+      <text class="edge" x="121" y="275">reads disk on every call</text>
+
+      <!-- kb -->
+      <rect class="box me" x="8" y="282" width="210" height="46" rx="6"/>
+      <text class="bt" x="113" y="300" text-anchor="middle">kb/*.md, 7 policy docs</text>
+      <text class="bs" x="113" y="316" text-anchor="middle">edit a file, nothing to redeploy</text>
+    </svg>
+    <figcaption>One process. The brain is Claude Code headless; the MCP server is its only tool; the knowledge base is files.</figcaption>
+  </figure>
+  <p>A terminal front-end, <code>cli.py</code>, calls the same <code>answer()</code> function as the Slack handler, which is how the demo and the eval were recorded without a workspace. <code>BRAIN=api</code> swaps Claude Code for the Anthropic SDK with the same tool functions; see Limitations.</p>
+</section>
+
+<!-- 04 -->
+<section id="demo">
+  <h2><span class="n">04</span>Recorded demo</h2>
+  <p class="sub">Six questions recorded by <code>demo/record.py</code> through <code>cli.py --json</code> on 21 Oct 2026. Answers are verbatim; costs are what Claude Code reported.</p>
+
+  <div class="thread">
+    <div class="hd">direct message · Orbit helper</div>
+
+    <div class="msg first">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">How many days of PTO do I get?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">As a full-time employee you get <b>28 days of PTO per calendar year</b>. You also get the public holidays of the country you're employed in, on top of the 28. If you're part-time, your allowance is pro-rated. PTO accrues at 2.33 days per month, but you can take days before they've accrued. The company shutdown from <b>24 December to 1 January</b> doesn't count against your PTO, and you can carry up to <b>5 unused days</b> into the next year as long as you use them by 31 March.</p>
+        <div class="src">Sources: pto-policy.md</div>
+        <div class="meta"><span class="pill plain">$0.0169 · 6.5 s</span></div>
+      </div>
+    </div>
+
+    <div class="msg">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">I'm going to the autumn retreat, how do I book my flight and when?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">Book your flight in <b>TravelPerk</b>, signed in with your Orbit Google account, not on a personal card. Use the trip label <code>retreat-2026-autumn</code> and book only your flights there, because Ops has already booked the retreat venue. Do it <b>at least 6 weeks before</b> the retreat. Bookings made closer than that need Ops approval and usually cost 30&ndash;50% more. Fly economy unless the flight is <b>longer than 8 hours</b>, in which case premium economy or business is allowed. If you need a visa, ask for an invitation letter in #ops-travel at least 8 weeks ahead. The knowledge base doesn't give the actual autumn retreat dates, so check those with #ops-travel to work out your deadline.</p>
+        <div class="src">Sources: travel-booking.md</div>
+        <div class="meta"><span class="pill plain">$0.0308 · 8.4 s</span></div>
+      </div>
+    </div>
+
+    <div class="msg">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">What's the hotel cap for a conference in London?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">For a conference in London, the hotel cap is <b>USD 300 per night</b>. The standard cap is USD 220 per night, and London gets the higher rate along with San Francisco and New York. Book the hotel through <b>TravelPerk</b> in the same trip as your flights, using the trip label <code>conf-&lt;event name&gt;</code>.</p>
+        <div class="src">Sources: travel-booking.md</div>
+        <div class="meta"><span class="pill plain">$0.0263 · 5.6 s</span></div>
+      </div>
+    </div>
+
+    <div class="msg">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">Can I spend $400 on a standing desk for my home office?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">Yes. Home-office equipment (desk, chair, monitor) is covered up to <b>USD 500 per year</b> with no pre-approval needed, so a $400 standing desk fits as long as you haven't already spent more than $100 of that allowance this year. Submit it in Expensify with the receipt (needed for anything over USD 25) within <b>30 days</b> of buying it. After that, it needs director approval. If the desk would take you over $500 for the year, get written approval from your manager <b>before</b> you buy it.</p>
+        <div class="src">Sources: expense-policy.md</div>
+        <div class="meta"><span class="pill plain">$0.0275 · 6.4 s</span></div>
+      </div>
+    </div>
+
+    <div class="msg">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">What is the office wifi password?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">I don't know, ask #it-help. The knowledge base doesn't have the office wifi password; the closest thing I found is the laptop setup doc, which says staff get a 1Password invite on their first day for shared credentials.</p>
+        <div class="src">Sources: none</div>
+        <div class="meta"><span class="pill plain">$0.0131 · 8.8 s</span><span class="pill keep">refused, as designed</span></div>
+      </div>
+    </div>
+
+    <div class="msg">
+      <div class="av u" aria-hidden="true">S</div>
+      <div>
+        <div class="who">Staff member</div>
+        <p class="body">What's the limit?</p>
+      </div>
+    </div>
+    <div class="msg">
+      <div class="av b" aria-hidden="true">O</div>
+      <div>
+        <div class="who">Orbit helper <span class="app">APP</span></div>
+        <p class="body">Which limit are you asking about? A few policies have one: <b>expense limits</b> by category (expense-policy.md), <b>AI tool / API credit budget</b> (ai-tool-budget.md), or <b>PTO allowances</b> (pto-policy.md).</p>
+        <div class="src">Sources: none</div>
+        <div class="meta"><span class="pill plain">$0.0216 · 4.9 s</span><span class="pill keep">asked back, as designed</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="sub">Total for the six: $0.1361, average $0.0227. Each answer took 3 model turns. Slack's <code>*bold*</code> is rendered as bold here; the words are unchanged.</p>
+</section>
+
+<!-- 05 -->
+<section id="evals">
+  <h2><span class="n">05</span>Evals</h2>
+  <p class="sub">The real scorecard from <code>evals/last_run.md</code>: 12 questions through the <code>claude-code</code> backend on 21 Oct 2026, the first full run, system prompt unchanged afterwards.</p>
+  <div class="tw">
+  <table class="stack">
+    <thead><tr><th>#</th><th>Question</th><th>Kind</th><th>Result</th><th class="num">Cost</th><th class="num">Time</th></tr></thead>
+    <tbody>
+      <tr><td class="k">1</td><td class="name">How many days of PTO do I get per year?</td><td data-l="Kind">fact: 28, cites pto-policy.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0280</td><td class="num" data-l="Time">9 s</td></tr>
+      <tr><td class="k">2</td><td class="name">Can I carry unused holiday into next year?</td><td data-l="Kind">fact: 5, 31 March, cites pto-policy.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0280</td><td class="num" data-l="Time">8 s</td></tr>
+      <tr><td class="k">3</td><td class="name">Do I need a receipt for a $20 coffee I bought while travelling?</td><td data-l="Kind">fact: 25, cites expense-policy.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0364</td><td class="num" data-l="Time">9 s</td></tr>
+      <tr><td class="k">4</td><td class="name">When am I allowed to fly business class?</td><td data-l="Kind">fact: 8 hours, cites travel-booking.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0274</td><td class="num" data-l="Time">8 s</td></tr>
+      <tr><td class="k">5</td><td class="name">My laptop was stolen, what do I do?</td><td data-l="Kind">fact: #it-help, 24 hours, cites laptop-it-setup.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0373</td><td class="num" data-l="Time">9 s</td></tr>
+      <tr><td class="k">6</td><td class="name">I need about $600 of API credits for an eval run next month. Who approves that?</td><td data-l="Kind">fact: #ai-tools, 1,000, cites ai-tool-budget.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0302</td><td class="num" data-l="Time">9 s</td></tr>
+      <tr><td class="k">7</td><td class="name">Can I paste a licensed dataset into Claude in Slack?</td><td data-l="Kind">fact: orbit-secure, cites data-handling.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0294</td><td class="num" data-l="Time">9 s</td></tr>
+      <tr><td class="k">8</td><td class="name">How long is probation and when do I get feedback?</td><td data-l="Kind">fact: 3 months, 30, cites onboarding-checklist.md</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0259</td><td class="num" data-l="Time">7 s</td></tr>
+      <tr><td class="k">9</td><td class="name">What is the office wifi password?</td><td data-l="Kind">refusal: said "I don't know"</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0138</td><td class="num" data-l="Time">10 s</td></tr>
+      <tr><td class="k">10</td><td class="name">Which dental insurance provider do we use?</td><td data-l="Kind">refusal: said "I don't know"</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0314</td><td class="num" data-l="Time">10 s</td></tr>
+      <tr><td class="k">11</td><td class="name">What is the limit?</td><td data-l="Kind">clarify: asked a clarifying question</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0071</td><td class="num" data-l="Time">7 s</td></tr>
+      <tr><td class="k">12</td><td class="name">How do I get approval?</td><td data-l="Kind">clarify: asked a clarifying question</td><td data-l="Result"><span class="pill keep">pass</span></td><td class="num" data-l="Cost">$0.0192</td><td class="num" data-l="Time">7 s</td></tr>
+      <tr class="total"><td class="k"></td><td class="name">Total</td><td data-l="Kind">8 fact, 2 refusal, 2 clarify</td><td data-l="Result">12/12 passed</td><td class="num" data-l="Cost">$0.3141</td><td class="num" data-l="Time">102 s</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>From the README: "12/12 says the rules held on the cases I wrote, not that the bot is right in general." The checks are substrings and a cited filename; the clarification check is "did it ask a question", which a lazy model could game, so the full answers in <code>last_run.md</code> are the thing to read, not just the table.</p>
+</section>
+
+<!-- 06 -->
+<section id="run">
+  <h2><span class="n">06</span>Run it yourself</h2>
+  <p>Needs Python 3.11+, and either Claude Code on <code>PATH</code> (logged in) or an <code>ANTHROPIC_API_KEY</code>. Code: <a href="https://github.com/Mild-Solvent/CV/tree/main/projects/claude-slack-helper">github.com/Mild-Solvent/CV/tree/main/projects/claude-slack-helper</a></p>
+<pre><code>cd projects/claude-slack-helper
+make setup                                   <span class="c"># venv + pip install -r requirements.txt</span>
+make test                                    <span class="c"># 19 unit tests, no model calls, about 1 s</span>
+.venv/bin/python cli.py "How many days of PTO do I get?"
+.venv/bin/python cli.py --repl               <span class="c"># multi-turn; earlier turns are passed as thread context</span>
+make evals                                   <span class="c"># 12 real questions, scorecard, writes evals/last_run.md</span></code></pre>
+  <p>Connecting a Slack workspace is seven steps in the README (create the app, Socket Mode, bot scopes, event subscriptions, two tokens, <code>make slack</code>). The eval is 12 calls and about a dollar, so changing the system prompt and re-running it is cheap.</p>
+</section>
+
+<!-- 07 -->
+<section id="prod">
+  <h2><span class="n">07</span>What I would watch in production</h2>
+  <p>The metric is <b>answered-and-useful per week</b>: questions the bot answered (not refused) that got a thumbs up or no thumbs down, from <code>feedback.jsonl</code>. Three numbers, three trip-wires:</p>
+  <ul>
+    <li><b>Thumbs-down rate.</b> Above 20% of ratings for two weeks running means wrong answers, which is worse than no bot. Stop and read every downvoted thread before touching the prompt.</li>
+    <li><b>Unanswered rate.</b> If answered-and-useful falls under about 15 a week for a month, the knowledge base is too small to matter or people have stopped asking. The honest move is to delete the bot and put the seven docs in a pinned Slack message.</li>
+    <li><b>Cost per answer.</b> $0.025 on average at list price, printed by <code>make evals</code> after every change. The cheapest lever if usage climbs is <code>HELPER_MODEL=claude-sonnet-5-5</code>, about half the cost per answer in testing, then a lower <code>--max-turns</code>.</li>
+  </ul>
+  <h3>When it breaks</h3>
+  <p class="sub">From the run-book. First 60 seconds, whatever the symptom: <code>make test</code> (code or deps broke), then one <code>cli.py</code> question (brain broke). If the CLI answers and only Slack is quiet, the problem is in Slack.</p>
+  <div class="tw">
+  <table class="stack">
+    <thead><tr><th>Failure</th><th>How you notice</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td class="name">MCP server not starting</td><td data-l="How you notice">Every answer is "I don't know", or Claude says it has no tools, or the JSON has <code>is_error</code>.</td><td data-l="Fix">Run <code>mcp_server/server.py</code> by hand; the traceback names it. Usually the wrong <code>mcp</code> version or system Python instead of <code>.venv</code>: <code>make setup</code>, re-run <code>make test</code>.</td></tr>
+      <tr><td class="name">Slack token expired or revoked</td><td data-l="How you notice">Process exits with <code>invalid_auth</code>, Socket Mode reconnects in a loop, or mentions get no eyes reaction.</td><td data-l="Fix">Reinstall the app in api.slack.com, copy the new bot token and app-level token into <code>.env</code>, restart. No code change. Untested here: built without a workspace.</td></tr>
+      <tr><td class="name">Rate limit or API outage</td><td data-l="How you notice">Answers take 60 to 180 s then fail; <code>rate_limit</code>, <code>overloaded</code> or <code>529</code> in stderr; users see "Sorry, I hit an error".</td><td data-l="Fix">Check <code>claude -p "say hi"</code> raw; if that fails it is upstream. Wait or switch to <code>BRAIN=api</code>. The handler fails safe in the thread, so no restart is needed.</td></tr>
+      <tr><td class="name">Knowledge base out of date</td><td data-l="How you notice">Thumbs down in <code>feedback.jsonl</code>, or "the bot said 28 days but it's 30 now". The most likely failure, and the one nobody pages you about.</td><td data-l="Fix">Edit the markdown in <code>kb/</code>, update the matching line in <code>evals/questions.yaml</code>, <code>make evals</code>, commit the new <code>last_run.md</code>. Nothing to restart.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="limits">
+  <h2><span class="n">08</span>Limitations</h2>
+  <ul>
+    <li><b>The Slack path has never talked to Slack.</b> It is written against slack-bolt 1.30 and covered by five handler tests with a fake client, but there was no workspace in the build environment. The first live run will find something: a scope I missed, a payload field that differs. Budget an hour for it.</li>
+    <li><b><code>BRAIN=api</code> is untested here.</b> There was no <code>ANTHROPIC_API_KEY</code> in the build environment. The code follows the documented Messages API tool-use loop and its pure parts (cost table, source parsing) are tested, but it has not made a real request. Its cost figure is an estimate from the public price list and is labelled "estimate" in the output.</li>
+    <li><b>The eval is 12 questions with string checks.</b> It shows the rules held on the cases I wrote, not that the bot is right in general. Read the answers, not just the table.</li>
+    <li><b>Search is keyword scoring over seven files.</b> Right for this size and transparent when wrong. Past a few dozen docs it will miss synonyms; that is the point to add an embedding index behind the same <code>search_docs</code> tool, not before.</li>
+    <li><b>Not a security boundary.</b> The bot has only the three read-only MCP tools, but anyone who can @mention it can read every doc in <code>kb/</code>. Nothing goes in <code>kb/</code> that you would not post in #general.</li>
+    <li><b>Single process, in-memory map</b> from bot reply to question for feedback. Restart the bot and reactions on earlier replies are not logged. Fine for one workspace; swap for SQLite if that hurts.</li>
+    <li><b>Costs are list price.</b> The figure Claude Code reports is API list price; on a Team or Enterprise seat it comes out of that seat's quota instead. The dollar figure is still the right one for deciding whether the tool is worth it.</li>
+    <li><b>Size:</b> 604 lines of app code (the target was 600) plus about 200 of tests. A new owner can read all of it in an hour.</li>
+  </ul>
+</section>
+
+<footer>
+  <ul>
+    <li><a href="../../">Main CV</a></li>
+    <li><a href="../">Case studies</a></li>
+    <li><a href="https://github.com/Mild-Solvent/CV/tree/main/projects/claude-slack-helper">Source code</a></li>
+    <li><a href="https://github.com/Mild-Solvent">github.com/Mild-Solvent</a></li>
+    <li><a href="https://www.linkedin.com/in/denis-matejcik">linkedin.com/in/denis-matejcik</a></li>
+    <li><a href="mailto:matejcikdenis@gmail.com">matejcikdenis@gmail.com</a></li>
+  </ul>
+  <p>Every number on this page comes from the project's README, <code>evals/last_run.md</code> and <code>demo/transcript.json</code>, all recorded from real runs. Where something is untested, the page says so.</p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What I automate, and how I decide</title>
+<meta name="description" content="AI automation case studies by Denis Matejcik: an agent-run job search, agent workflows for B2B clients, an AI sales agent at a family business, and how each one was measured, kept or retired.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="What I automate, and how I decide">
+<meta property="og:description" content="AI automation case studies: spec, agent builds, verify, run, measure, keep or retire. Real numbers from an agent-run job search and a CV benchmark.">
+<meta property="og:url" content="https://mild-solvent.github.io/CV/showcase/">
+<meta property="og:site_name" content="Denis Matejcik">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://mild-solvent.github.io/CV/showcase/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#fbfaf7;
+    --surface:#ffffff;
+    --ink:#1c1b19;
+    --ink-2:#4a4844;
+    --muted:#6f6c66;
+    --rule:#dcd9d2;
+    --rule-soft:#ebe8e1;
+    --accent:#0e6b53;
+    --accent-ink:#0b573f;
+    --accent-soft:#e3f1ea;
+    --warn:#b4531b;
+    --warn-soft:#f9e9df;
+    --blocked:#5a5f9e;
+    --blocked-soft:#e7e8f5;
+    --code-bg:#f1efe9;
+    --shadow:0 1px 2px rgba(20,18,14,.06);
+    --on-mark:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#141516;
+      --surface:#1c1e20;
+      --ink:#ebe9e4;
+      --ink-2:#c3c0b9;
+      --muted:#9b978f;
+      --rule:#33363a;
+      --rule-soft:#282b2e;
+      --accent:#5fd3ad;
+      --accent-ink:#8ae4c6;
+      --accent-soft:#1a2e28;
+      --warn:#f0a070;
+      --warn-soft:#3a2619;
+      --blocked:#a9adef;
+      --blocked-soft:#26284a;
+      --code-bg:#24272a;
+      --shadow:none;
+      --on-mark:#141516;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141516;
+    --surface:#1c1e20;
+    --ink:#ebe9e4;
+    --ink-2:#c3c0b9;
+    --muted:#9b978f;
+    --rule:#33363a;
+    --rule-soft:#282b2e;
+    --accent:#5fd3ad;
+    --accent-ink:#8ae4c6;
+    --accent-soft:#1a2e28;
+    --warn:#f0a070;
+    --warn-soft:#3a2619;
+    --blocked:#a9adef;
+    --blocked-soft:#26284a;
+    --code-bg:#24272a;
+    --shadow:none;
+    --on-mark:#141516;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:17px;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:hover{color:var(--accent-ink)}
+  main{max-width:760px;margin:0 auto;padding:40px 16px 56px}
+
+  /* header */
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;color:var(--muted);margin-bottom:36px;flex-wrap:wrap}
+  .topbar a{color:var(--muted);text-decoration:none}
+  .topbar a:hover{color:var(--accent)}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px;margin:0 0 10px}
+  .px{display:inline-block;width:12px;height:12px;flex:none;
+      background:
+        linear-gradient(var(--accent),var(--accent)) 0 0/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 8px 0/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 4px 4px/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 0 8px/4px 4px no-repeat,
+        linear-gradient(var(--accent),var(--accent)) 8px 8px/4px 4px no-repeat}
+  h1{font-size:clamp(30px,5.2vw,40px);line-height:1.15;letter-spacing:-.015em;margin:0 0 14px;font-weight:600}
+  .byline{color:var(--muted);font-size:15px;margin:0 0 22px}
+  .lead{font-size:20px;line-height:1.5;color:var(--ink);margin:0 0 28px}
+  .lead strong{font-weight:600}
+
+  nav.contents{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:14px 0;margin:0 0 44px}
+  nav.contents ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;font-size:15px}
+  nav.contents a{text-decoration:none;color:var(--ink-2)}
+  nav.contents a:hover{color:var(--accent)}
+  nav.contents .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-right:8px}
+  @media (max-width:520px){nav.contents ol{grid-template-columns:1fr}}
+
+  /* sections */
+  section{margin:0 0 56px}
+  h2{font-size:26px;line-height:1.25;letter-spacing:-.01em;margin:0 0 6px;font-weight:600}
+  h2 .n{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent);display:block;margin-bottom:8px;letter-spacing:.06em}
+  h3{font-size:18.5px;margin:30px 0 8px;font-weight:600}
+  h4{font-size:16px;margin:22px 0 6px;font-weight:600}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 16px;padding-left:22px}
+  li{margin:0 0 6px}
+  li::marker{color:var(--muted)}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 18px}
+  .note{font-size:15px;color:var(--ink-2);border-left:3px solid var(--rule);padding:4px 0 4px 14px;margin:18px 0}
+  code{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+
+  .steps{list-style:none;padding:0;margin:0 0 24px;counter-reset:s}
+  .steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--rule-soft);margin:0}
+  .steps li:last-child{border-bottom:1px solid var(--rule-soft)}
+  .steps li::before{content:counter(s,decimal-leading-zero);font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent);padding-top:4px}
+  .steps b{font-weight:600}
+
+  /* figures */
+  figure{margin:24px 0}
+  figure svg{display:block;width:100%;height:auto;margin:0 auto}
+  figure.quad svg{max-width:560px}
+  figure.flow svg{max-width:540px}
+  figcaption{font-size:14px;color:var(--muted);margin-top:10px;text-align:center}
+  svg text{font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:var(--ink)}
+  svg .ax{fill:var(--muted);font-size:11.5px}
+  svg .q{fill:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase}
+  svg .lbl{font-size:12px;fill:var(--ink)}
+  svg .num{font-size:10.5px;font-weight:600;font-family:"IBM Plex Mono",monospace;fill:var(--on-mark)}
+  svg .grid{stroke:var(--rule);stroke-width:1}
+  svg .mid{stroke:var(--rule);stroke-dasharray:3 3}
+  svg .box{fill:var(--surface);stroke:var(--rule);stroke-width:1.2}
+  svg .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+  svg .box.me{fill:var(--code-bg);stroke:var(--rule)}
+  svg .bt{font-size:12px;font-weight:600;fill:var(--ink)}
+  svg .bs{font-size:10.5px;fill:var(--ink-2)}
+  svg .arrow{stroke:var(--muted);stroke-width:1.4;fill:none}
+  svg .ahead{fill:var(--muted)}
+
+  /* tables */
+  .tw{overflow-x:auto;margin:18px 0 22px;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.45}
+  th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--rule-soft)}
+  th{font-size:12.5px;font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--muted);letter-spacing:.03em;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.k{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+  tr.total td{font-weight:600}
+  @media (max-width:600px){
+    th{white-space:normal}
+    table.stack thead{display:none}
+    table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+    table.stack tr{border:1px solid var(--rule);border-radius:8px;padding:6px 12px 8px;margin:0 0 10px;background:var(--surface)}
+    table.stack td{border:0;padding:4px 0;white-space:normal;text-align:left}
+    table.stack td.num{text-align:left}
+    table.stack td[data-l]::before{content:attr(data-l);display:block;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);letter-spacing:.03em;margin-bottom:1px}
+    table.stack td.k{font-size:12px;padding-top:6px}
+    table.stack td.name{font-weight:600;padding-top:2px}
+    table.stack tr.total{background:var(--code-bg)}
+  }
+  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.03em;padding:2px 7px;border-radius:4px;white-space:nowrap;vertical-align:middle}
+  .pill.keep{background:var(--accent-soft);color:var(--accent-ink)}
+  .pill.retire{background:var(--warn-soft);color:var(--warn)}
+  .pill.blocked{background:var(--blocked-soft);color:var(--blocked)}
+  .delta{color:var(--accent-ink);font-weight:600}
+  .delta.down{color:var(--warn)}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+  .stat{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
+  .stat .v{font-size:28px;font-weight:600;line-height:1.1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+  @media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat .v{font-size:24px}}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+  @media (max-width:600px){.cards{grid-template-columns:1fr}}
+  .card{display:block;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px 18px 16px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:border-color .15s}
+  .card:hover{border-color:var(--accent);color:var(--ink)}
+  .card .t{font-weight:600;font-size:17px;margin:0 0 6px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .card .t .go{color:var(--accent);font-family:"IBM Plex Mono",monospace;font-size:13px;flex:none}
+  .card p{font-size:15px;color:var(--ink-2);margin:0 0 10px}
+  .card .path{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+
+  /* footer */
+  footer{border-top:1px solid var(--rule);padding-top:22px;margin-top:20px;font-size:15px;color:var(--muted)}
+  footer ul{list-style:none;padding:0;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px 22px}
+  footer a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--rule)}
+  footer a:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* print */
+  @page{size:A4;margin:15mm 14mm}
+  @media print{
+    :root{--bg:#fff;--surface:#fff;--ink:#111;--ink-2:#333;--muted:#555;--rule:#bbb;--rule-soft:#ddd;--accent:#0b573f;--accent-ink:#0b573f;--accent-soft:#eaf3ee;--warn:#9a4312;--warn-soft:#f6e6da;--blocked:#464b8c;--blocked-soft:#e3e4f2;--code-bg:#f0f0f0;--shadow:none;--on-mark:#fff}
+    body{font-size:11pt;line-height:1.45;background:#fff}
+    main{max-width:none;padding:0}
+    .topbar{display:none}
+    nav.contents{display:none}
+    h1{font-size:24pt}
+    h2{font-size:16pt;break-after:avoid}
+    h3,h4{break-after:avoid}
+    section{margin-bottom:26pt}
+    .lead{font-size:13pt}
+    figure,.card,.stat,.steps li,tr{break-inside:avoid}
+    table{break-inside:auto}
+    figure.quad svg{max-width:400px}
+    figure.flow svg{max-width:380px}
+    .tw{overflow:visible}
+    table{font-size:10pt}
+    .stats{grid-template-columns:repeat(4,1fr)}
+    .cards{grid-template-columns:1fr 1fr}
+    a{color:inherit}
+    .card .go{display:none}
+    .card .path::after{content:" · " attr(data-url);}
+    footer a[href^="http"]::after,footer a[href^="mailto"]::after{content:"";}
+    svg text{fill:#111}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<div class="topbar">
+  <a href="../">&larr; Main CV</a>
+  <span><a href="slack-helper/">Claude-in-Slack helper</a> &nbsp;·&nbsp; <a href="guide/">Claude for non-engineers</a></span>
+</div>
+
+<header>
+  <p class="eyebrow"><span class="px" aria-hidden="true"></span>AI automation case studies</p>
+  <h1>What I automate, and how I decide</h1>
+  <p class="byline">Denis Matejcik &middot; updated 21 Oct 2026</p>
+  <p class="lead">I write the spec, a coding agent builds, I verify the result against real data, then the automation runs and I measure it. <strong>What earns its keep stays; what does not is retired or handed back to a person.</strong></p>
+  <p class="note">Nothing on this page is in production: the job search is my own, the Slack bot has not been connected to a workspace, and the coaching plan has not been run yet. Every number links to the log it came from.</p>
+</header>
+
+<nav class="contents" aria-label="Contents">
+  <ol>
+    <li><a href="#decide"><span class="n">01</span>How I decide what to build</a></li>
+    <li><a href="#job-search"><span class="n">02</span>An agent-run job search</a></li>
+    <li><a href="#teamday"><span class="n">03</span>Agent workflows for B2B clients</a></li>
+    <li><a href="#cea"><span class="n">04</span>An AI sales agent at a family business</a></li>
+    <li><a href="#measure"><span class="n">05</span>Measuring a CV like an automation</a></li>
+    <li><a href="#built"><span class="n">06</span>Two things I built for this application</a></li>
+  </ol>
+</nav>
+
+<!-- 01 -->
+<section id="decide">
+  <h2><span class="n">01</span>How I decide what to build</h2>
+  <p>There is always more to automate than one person can build. So I rank by expected value. How much time or risk does it remove, how often does it run, and what does it cost to build and keep working? The method is the same whether the builder is an agent or me.</p>
+
+  <ol class="steps">
+    <li><span><b>Spec.</b> One page: what done looks like, where the real data is, and what the agent may not do. Usually: invent facts, spend money, act in my name.</span></li>
+    <li><span><b>Build.</b> An agent builds it in its own branch or worktree. I review the design and the edge cases, not every line.</span></li>
+    <li><span><b>Verify.</b> Against real inputs, not a demo. I reload the page instead of trusting the DOM, and I read the saved record, not the success toast.</span></li>
+    <li><span><b>Run.</b> With a written run-book, so the next run does not start from zero.</span></li>
+    <li><span><b>Measure.</b> A number before and a number after, even a rough one. Without it I cannot tell a win from a habit.</span></li>
+    <li><span><b>Keep, fix or retire.</b> A task that keeps failing after a few honest attempts goes back to a person, and the run-book records why. Nobody pays for the same lesson twice.</span></li>
+  </ol>
+
+  <p>The chart below places real items from my job-search automation on the two axes I use. The numbers match the table under it.</p>
+
+  <figure class="quad">
+    <svg viewBox="0 0 360 318" role="img" aria-labelledby="quad-title quad-desc">
+      <title id="quad-title">Value to the organisation against cost to build and maintain</title>
+      <desc id="quad-desc">Six job-search automations placed on a two by two: the ATS scoring skill, run-books and the job scan sit high-value and low or medium cost and were kept; the Hitmarker photo upload and the Contra rate dropdown sit low-value and high cost and were retired; Upwork publishing sits mid-value and is blocked on a fact only a person can supply.</desc>
+      <!-- plot frame -->
+      <rect x="46" y="14" width="300" height="256" fill="none" class="grid"/>
+      <line x1="196" y1="14" x2="196" y2="270" class="mid"/>
+      <line x1="46" y1="142" x2="346" y2="142" class="mid"/>
+      <!-- quadrant captions -->
+      <text class="q" x="52" y="27">build first</text>
+      <text class="q" x="340" y="27" text-anchor="end">build if it pays</text>
+      <text class="q" x="52" y="263">nice to have</text>
+      <text class="q" x="340" y="263" text-anchor="end">retire or hand over</text>
+      <!-- axes -->
+      <text class="ax" x="196" y="292" text-anchor="middle">Cost to build and maintain &rarr;</text>
+      <text class="ax" x="52" y="306" text-anchor="start">low</text>
+      <text class="ax" x="340" y="306" text-anchor="end">high</text>
+      <text class="ax" transform="translate(16 142) rotate(-90)" text-anchor="middle">Value to the organisation &rarr;</text>
+      <text class="ax" x="36" y="266" text-anchor="end">low</text>
+      <text class="ax" x="36" y="22" text-anchor="end">high</text>
+
+      <!-- kept: filled accent circles -->
+      <g>
+        <circle cx="92" cy="60" r="10" fill="var(--accent)"/>
+        <text class="num" x="92" y="64" text-anchor="middle">1</text>
+        <text class="lbl" x="107" y="64">ATS scoring skill</text>
+      </g>
+      <g>
+        <circle cx="110" cy="100" r="10" fill="var(--accent)"/>
+        <text class="num" x="110" y="104" text-anchor="middle">2</text>
+        <text class="lbl" x="125" y="104">Per-site run-books</text>
+      </g>
+      <g>
+        <circle cx="226" cy="48" r="10" fill="var(--accent)"/>
+        <text class="num" x="226" y="52" text-anchor="middle">3</text>
+        <text class="lbl" x="241" y="52">Job scan to board</text>
+      </g>
+      <!-- blocked: square -->
+      <g>
+        <rect x="127" y="162" width="20" height="20" rx="3" fill="var(--blocked)"/>
+        <text class="num" x="137" y="176" text-anchor="middle">4</text>
+        <text class="lbl" x="152" y="176">Upwork publishing</text>
+      </g>
+      <!-- retired: warn rings -->
+      <g>
+        <circle cx="300" cy="206" r="10" fill="var(--warn)"/>
+        <text class="num" x="300" y="210" text-anchor="middle">5</text>
+        <text class="lbl" x="285" y="210" text-anchor="end">Hitmarker photo</text>
+      </g>
+      <g>
+        <circle cx="262" cy="234" r="10" fill="var(--warn)"/>
+        <text class="num" x="262" y="238" text-anchor="middle">6</text>
+        <text class="lbl" x="247" y="238" text-anchor="end">Contra rate field</text>
+      </g>
+    </svg>
+    <figcaption>Where six real items landed. Filled green: kept. Orange: retired, now a manual job. Square: blocked on a fact only I can supply.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table class="stack">
+    <thead><tr><th>#</th><th>Automation</th><th>What happened</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td class="k">1</td><td class="name">ATS scoring skill</td><td data-l="What happened">Scores a CV against a posting the way a screener would. Built once, reused on every tailored CV since.</td><td data-l="Decision"><span class="pill keep">kept</span></td></tr>
+      <tr><td class="k">2</td><td class="name">Per-site run-books</td><td data-l="What happened">Each site's quirks, appended the moment an agent hits a new failure. Cheap to write, saves every later session.</td><td data-l="Decision"><span class="pill keep">kept</span></td></tr>
+      <tr><td class="k">3</td><td class="name">Job scan to board</td><td data-l="What happened">Five agents scan in parallel to one schema; a build script merges and dedupes into a board with a decision database.</td><td data-l="Decision"><span class="pill keep">kept</span></td></tr>
+      <tr><td class="k">4</td><td class="name">Upwork publishing</td><td data-l="What happened">Everything filled, but publishing needs a street address line only I can give. Not skipped work, blocked work.</td><td data-l="Decision"><span class="pill blocked">waits for me</span></td></tr>
+      <tr><td class="k">5</td><td class="name">Hitmarker photo upload</td><td data-l="What happened">Five automated attempts. Each time the page said "Saved"; after reload the avatar was still initials. The notes say: do not burn attempts on it, it is a manual job.</td><td data-l="Decision"><span class="pill retire">retired</span></td></tr>
+      <tr><td class="k">6</td><td class="name">Contra rate dropdown</td><td data-l="What happened">A combobox that never registered a selection by real click, JS click or keyboard. Left for me; it is one dropdown.</td><td data-l="Decision"><span class="pill retire">handed back</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Items 5 and 6 are the ones I am proudest of. An automation that eats attempts on a one-off task has negative value, and the right move is to say so in writing and stop.</p>
+</section>
+
+<!-- 02 -->
+<section id="job-search">
+  <h2><span class="n">02</span>Case study: an agent-run job search</h2>
+  <p class="sub">September 2026 onwards &middot; designed and operated by me, built and run by Claude Code sessions</p>
+
+  <h3>Problem</h3>
+  <p>I was looking in three lanes at once: software, game development and drone software. That meant a dozen platforms, each with its own forms, closed skill taxonomies and interaction quirks, and one person to fill them. Done by hand it is slow, and the profiles drift apart: different dates, different rates, different stories.</p>
+  <p>The goal was narrower than "apply everywhere". One consistent story on every platform, a ranked list of openings worth my time, and applications that go out honestly in my name.</p>
+
+  <h3>Design</h3>
+  <figure class="flow">
+    <svg viewBox="0 0 360 352" role="img" aria-labelledby="flow-title flow-desc">
+      <title id="flow-title">Architecture of the agent-run job search</title>
+      <desc id="flow-desc">I create accounts and answer open questions. A coordinator session plans and spawns one worker session per platform group, each in its own git worktree. Workers read and append to shared memory: the profile kit and the per-site run-books. Their output lands in a job board with a decision database.</desc>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="ahead"/>
+        </marker>
+      </defs>
+      <!-- me -->
+      <rect class="box me" x="30" y="6" width="300" height="44" rx="6"/>
+      <text class="bt" x="180" y="24" text-anchor="middle">Me</text>
+      <text class="bs" x="180" y="40" text-anchor="middle">creates accounts, answers open questions, approves sends</text>
+      <line x1="180" y1="50" x2="180" y2="70" class="arrow" marker-end="url(#ah)"/>
+      <!-- coordinator -->
+      <rect class="box acc" x="30" y="72" width="300" height="44" rx="6"/>
+      <text class="bt" x="180" y="90" text-anchor="middle">Coordinator session</text>
+      <text class="bs" x="180" y="106" text-anchor="middle">plans, spawns workers, relays messages between them</text>
+      <!-- fan out -->
+      <path d="M180 116 V130 H40 V140" class="arrow" marker-end="url(#ah)"/>
+      <path d="M180 116 V130 H110 V140" class="arrow" marker-end="url(#ah)"/>
+      <path d="M180 116 V140" class="arrow" marker-end="url(#ah)"/>
+      <path d="M180 116 V130 H250 V140" class="arrow" marker-end="url(#ah)"/>
+      <path d="M180 116 V130 H320 V140" class="arrow" marker-end="url(#ah)"/>
+      <!-- workers -->
+      <g>
+        <rect class="box" x="10" y="142" width="60" height="46" rx="6"/>
+        <text class="bt" x="40" y="162" text-anchor="middle">games</text>
+        <text class="bs" x="40" y="178" text-anchor="middle">worktree</text>
+        <rect class="box" x="80" y="142" width="60" height="46" rx="6"/>
+        <text class="bt" x="110" y="162" text-anchor="middle">drones</text>
+        <text class="bs" x="110" y="178" text-anchor="middle">worktree</text>
+        <rect class="box" x="150" y="142" width="60" height="46" rx="6"/>
+        <text class="bt" x="180" y="162" text-anchor="middle">slovak</text>
+        <text class="bs" x="180" y="178" text-anchor="middle">worktree</text>
+        <rect class="box" x="220" y="142" width="60" height="46" rx="6"/>
+        <text class="bt" x="250" y="162" text-anchor="middle">czech</text>
+        <text class="bs" x="250" y="178" text-anchor="middle">worktree</text>
+        <rect class="box" x="290" y="142" width="60" height="46" rx="6"/>
+        <text class="bt" x="320" y="162" text-anchor="middle">remote</text>
+        <text class="bs" x="320" y="178" text-anchor="middle">worktree</text>
+      </g>
+      <text class="bs" x="180" y="204" text-anchor="middle">one worker session per platform group, parallel</text>
+      <!-- memory band (bidirectional) -->
+      <path d="M48 188 V214" class="arrow" marker-end="url(#ah)" marker-start="url(#ah)"/>
+      <path d="M312 188 V214" class="arrow" marker-end="url(#ah)" marker-start="url(#ah)"/>
+      <rect class="box" x="30" y="216" width="300" height="52" rx="6"/>
+      <text class="bt" x="180" y="235" text-anchor="middle">Shared memory</text>
+      <text class="bs" x="180" y="250" text-anchor="middle">profile kit: facts, links, open questions ("ask, do not invent")</text>
+      <text class="bs" x="180" y="263" text-anchor="middle">run-books: per-site gotchas, appended after each failure</text>
+      <!-- board -->
+      <line x1="180" y1="268" x2="180" y2="290" class="arrow" marker-end="url(#ah)"/>
+      <rect class="box acc" x="30" y="292" width="300" height="52" rx="6"/>
+      <text class="bt" x="180" y="311" text-anchor="middle">Job board with a decision database</text>
+      <text class="bs" x="180" y="326" text-anchor="middle">five scan files, one schema, one build script, deduped on URL</text>
+      <text class="bs" x="180" y="339" text-anchor="middle">apply &rarr; applied &rarr; replied &rarr; interview &rarr; closed</text>
+    </svg>
+    <figcaption>Coordinator and workers in Claude Code. Memory is files in git; the board is a page with a small database.</figcaption>
+  </figure>
+
+  <ul>
+    <li><b>Coordinator and workers.</b> One session plans and spawns one session per platform group, each in its own git worktree. Sessions talk through cross-session messages.</li>
+    <li><b>Shared memory.</b> A profile kit is the single source of truth: identity, links, bios, confirmed facts, and an open-questions list headed "ask Denis, do not invent". It is git-ignored because it holds private details.</li>
+    <li><b>Run-books updated after each failure.</b> Every site quirk is appended the moment it costs an agent a retry. Examples: form state hidden in shadow DOM on Profesia, selects that silently drop on Lemon.io, a honeypot field on RemoteGameJobs. On Jobs.cz the save button only works through <code>form.requestSubmit</code>.</li>
+    <li><b>Rules the agents keep.</b> I create every account myself. A session never performs an action another session was denied. No fact is invented to fill a required field; the field stays blank and goes on the open-questions list.</li>
+    <li><b>A decision database.</b> Five scan agents each write JSON to one schema. The schema says "only listings you actually fetched" and "never invent emails, salaries or dates", and sets a 1 to 5 fit rubric. A build script merges, dedupes on URL and sorts. The board records apply, maybe or skip per listing.</li>
+    <li><b>Applying rules.</b> Read the queue from the database, never apply to anything I have not marked. Draft the whole batch first, show me, then send. About ten a day, a follow-up after a week of silence, and the red flags on each listing are shown, not written around.</li>
+  </ul>
+
+  <h3>Result</h3>
+  <div class="stats">
+    <div class="stat"><div class="v">11</div><div class="l">hiring platforms with a live profile or alert, verified then re-asked "live, not a draft?"</div></div>
+    <div class="stat"><div class="v">136</div><div class="l">listings scanned into one board by five parallel agents</div></div>
+    <div class="stat"><div class="v">76</div><div class="l">of them AI-flagged; 42 with a contact email</div></div>
+    <div class="stat"><div class="v">20</div><div class="l">roles in the first batch: 14 emails and 12 portal submissions, six roles got both</div></div>
+  </div>
+  <div class="tw">
+  <table class="stack">
+    <thead><tr><th>Scan group</th><th class="num">Listings (count)</th><th>Honest read from the notes</th></tr></thead>
+    <tbody>
+      <tr><td class="name">Games</td><td class="num" data-l="Listings (count)">36</td><td data-l="Honest read from the notes">No fit-5 role. Studios want senior gameplay engineers with shipped titles; 12 entries are speculative.</td></tr>
+      <tr><td class="name">Drones</td><td class="num" data-l="Listings (count)">25</td><td data-l="Honest read from the notes">Thin and mostly on-site: 15 of 25. One fit-5, remote.</td></tr>
+      <tr><td class="name">Software</td><td class="num" data-l="Listings (count)">75</td><td data-l="Honest read from the notes">Where the volume is: 16 roles at fit 5, nearly all with AI in the role, nearly all remote.</td></tr>
+      <tr class="total"><td class="name">Total</td><td class="num" data-l="Listings (count)">136</td><td data-l="Honest read from the notes">Deduped on URL across the five scan files (30, 25, 25, 22 and 35 listings each).</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The first application batch picked 20 roles. 14 went by email with a per-company letter in the listing's language, honest about the gaps. 12 went through portals. Two stayed open because the browser extension had no permission on those domains, which is a human click, not an agent task.</p>
+  <p>The outcomes are recorded as they came. One company replied that email does not enter their process and the portal form was filled but needs my real click on Submit. One rejected within hours because they cannot hire in Slovakia. That is useful data, and it goes in the board, not in a drawer.</p>
+
+  <h3>What it costs to run</h3>
+  <p>Token use is tracked per session in the Claude usage dashboard; I quote the monthly figure on request rather than publish it here. The human cost is clearer: I create accounts, answer the open-questions list, and press the buttons agents may not press. The design keeps that list short and visible, which is the point.</p>
+
+  <h3>What I retired or handed back to a person</h3>
+  <ul>
+    <li><b>Hitmarker avatar upload.</b> Five attempts, each one reported "Saved", none persisted, no error anywhere. The notes conclude it is the site's own pipeline and mark it manual. Retired.</li>
+    <li><b>Contra hourly-rate dropdown.</b> A portal combobox that dropped the selection under real clicks, JS clicks and keyboard. "Left for Denis; it is one dropdown." Handed back.</li>
+    <li><b>Upwork publishing.</b> Blocked on a street address, a fact only I can supply. The portfolio and job alerts behind it are listed as blocked work, not skipped work.</li>
+    <li><b>Wellfound region sub-filter.</b> Automation failed three ways. One manual click left, written down as such.</li>
+    <li><b>Arc.dev resume upload.</b> No file input in the DOM, so it cannot be automated. The agent found that a LinkedIn link satisfies the same rule and moved on.</li>
+  </ul>
+
+  <h3>What I would do differently</h3>
+  <ul>
+    <li><b>Sync is a requirement, not a nicety.</b> My apply or skip decisions were made on my phone and mirrored to local storage, so they never reached the shared database. The first batch was picked by fit score instead of from my queue.</li>
+    <li><b>Log before sending, not after.</b> One application went out twice (the ATS deduplicated it), and one role title was never recorded. The applying agent now needs a write-to-log step before the send.</li>
+    <li><b>Verify the artifact, not the process.</b> A PDF printed from a local file carried two dead links, and 14 emails had already gone. Now the link annotations are checked before any send.</li>
+    <li><b>Shared memory must travel.</b> The untracked kit did not propagate into worktrees and was copied by hand. Next time it is tracked, with secrets split out.</li>
+  </ul>
+</section>
+
+<!-- 03 -->
+<section id="teamday">
+  <h2><span class="n">03</span>Earlier work: agent workflows for B2B clients at teamday.ai</h2>
+  <p class="sub">Senior Software Development Engineer &middot; June to September 2025 &middot; Bratislava</p>
+  <h3>What the work was</h3>
+  <p>teamday.ai is an AI-agents startup. I built agent workflows that automate business processes for B2B clients. I connected LLM agents to the clients' tools and data through MCP servers, scrapers and data pipelines.</p>
+  <h3>What makes an agent finish the job</h3>
+  <p>Most of the work was the unglamorous glue that makes an LLM finish a task instead of describing it. That means validation, retries, structured outputs, and evals on real data. An agent that sounds done and an agent that is done look identical in a demo. They only separate when you check the output against the real system.</p>
+  <p class="note">Client names and figures belong to the clients, so there are none here.</p>
+</section>
+
+<!-- 04 -->
+<section id="cea">
+  <h2><span class="n">04</span>Earlier work: an AI sales agent at a family business</h2>
+  <p class="sub">CEA Europe (ceaeurope.sk) &middot; promotional goods and corporate events &middot; 2017 to present</p>
+  <p>CEA Europe is my family's company, a small business with non-technical sales and back-office staff. Since 2017 I have been its IT person: the website, the product catalogue, enquiry forms, integrations, and day-to-day support for whoever is stuck.</p>
+  <p>I deployed an AI sales agent into that business. I have not published what it handles or any numbers from it, so this is a short section on purpose. The useful part of the story is the setting: tools only stay in use there if the people using them helped define the problem.</p>
+  <p class="note">No numbers on this page for this one. I would rather walk through the setup on a call than put an estimate in writing.</p>
+</section>
+
+<!-- 05 -->
+<section id="measure">
+  <h2><span class="n">05</span>Measuring a CV like an automation</h2>
+  <p>Before sending my CV for this role I ran it through the screeners I could get my hands on, then changed the document and ran them again. Same habit as any automation: a number before, a number after, and a note about what the number cannot see.</p>
+  <div class="tw">
+  <table class="stack">
+    <thead><tr><th>Scorer</th><th>What it measures</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead>
+    <tbody>
+      <tr><td class="name">Own ATS scorer (<code>ats_score.py</code>)</td><td data-l="Measures">Parse, title, keywords; HiredScore-style A to D (0 to 100)</td><td class="num" data-l="Before">26, D</td><td class="num" data-l="After">62, C</td><td class="num delta" data-l="Change">+36</td></tr>
+      <tr><td class="name">Resume-Matcher 0.1.2</td><td data-l="Measures">Keyword embedding cosine (0 to 100)</td><td class="num" data-l="Before">56.9</td><td class="num" data-l="After">67.3</td><td class="num delta" data-l="Change">+10.4</td></tr>
+      <tr><td class="name">Resume-Matcher main, strict keywords</td><td data-l="Measures">Whole-word keywords, skills, title, sections, dates (0 to 100)</td><td class="num" data-l="Before">27.3</td><td class="num" data-l="After">38.8</td><td class="num delta" data-l="Change">+11.5</td></tr>
+      <tr><td class="name">Resume-Matcher main, parse check</td><td data-l="Measures">Extraction and layout / content (0 to 100 each)</td><td class="num" data-l="Before">100 / 85</td><td class="num" data-l="After">100 / 100</td><td class="num delta" data-l="Change">+15</td></tr>
+      <tr><td class="name">TF-IDF cosine (scikit-learn)</td><td data-l="Measures">Unigram similarity (0 to 1); posting vocabulary covered (%)</td><td class="num" data-l="Before">0.13; 18%</td><td class="num" data-l="After">0.26; 37%</td><td class="num delta" data-l="Change">&times;2</td></tr>
+      <tr><td class="name">all-MiniLM-L6-v2 cosine</td><td data-l="Measures">Semantic similarity to the role text (0 to 1)</td><td class="num" data-l="Before">0.49</td><td class="num" data-l="After">0.67</td><td class="num delta" data-l="Change">+0.18</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Every scorer agreed on direction and none was impressed: the tailored CV is still "orange" in Resume-Matcher and under 40 on its strict keyword matcher. That is fine. The scores showed me what the parsers could not read. Three of four missed the phone number, one glued two headings together, and a dash broke a date range. Those were cheap fixes.</p>
+  <p>One number went the other way on purpose. A draft scored 66 while it called a project a production system. That project was built end to end but never launched, so the claim came out and the score dropped to 62. <span class="delta down">&minus;4</span> for a CV I can defend in every line is a trade I take every time.</p>
+  <p>I also had the draft read blind by a reviewer playing Epoch's COO and hiring manager. The verdict on draft one was "developer who uses agents, not yet enablement manager". This page is part of the answer to that.</p>
+</section>
+
+<!-- 06 -->
+<section id="built">
+  <h2><span class="n">06</span>Two things I built for this application</h2>
+  <p>Both close a gap the review found: no evidence of an LLM wired into team chat, and no evidence of teaching. Each one is a real artefact, not a description of one.</p>
+  <div class="cards">
+    <a class="card" href="slack-helper/">
+      <div class="t"><span>Claude-in-Slack helper</span><span class="go">&rarr;</span></div>
+      <p>A Slack bot whose brain is Claude Code headless with an MCP docs server. Built and evaluated end to end through its CLI, with a run-book; not yet connected to a live workspace.</p>
+      <div class="path" data-url="https://mild-solvent.github.io/CV/showcase/slack-helper/">showcase/slack-helper/</div>
+    </a>
+    <a class="card" href="guide/">
+      <div class="t"><span>Claude for non-engineers</span><span class="go">&rarr;</span></div>
+      <p>The one-page guide I would hand to someone on day one, plus a 5-day coaching plan I have not yet run with anyone.</p>
+      <div class="path" data-url="https://mild-solvent.github.io/CV/showcase/guide/">showcase/guide/</div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <ul>
+    <li><a href="../">Main CV</a></li>
+    <li><a href="https://github.com/Mild-Solvent">github.com/Mild-Solvent</a></li>
+    <li><a href="https://www.linkedin.com/in/denis-matejcik">linkedin.com/in/denis-matejcik</a></li>
+    <li><a href="mailto:matejcikdenis@gmail.com">matejcikdenis@gmail.com</a></li>
+  </ul>
+  <p>Every number on this page comes from the job-search run logs and the CV benchmark notes. Where I have no number, the page says so.</p>
+</footer>
+
+</main>
+</body>
+</html>

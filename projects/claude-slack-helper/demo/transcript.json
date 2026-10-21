@@ -1,0 +1,70 @@
+[
+  {
+    "question": "How many days of PTO do I get?",
+    "answer": "As a full-time employee you get *28 days of PTO per calendar year*. You also get the public holidays of the country you're employed in, on top of the 28. If you're part-time, your allowance is pro-rated. PTO accrues at 2.33 days per month, but you can take days before they've accrued. The company shutdown from *24 December to 1 January* doesn't count against your PTO, and you can carry up to *5 unused days* into the next year as long as you use them by 31 March.",
+    "sources": [
+      "pto-policy.md"
+    ],
+    "cost_usd": 0.0168761,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 6477
+  },
+  {
+    "question": "I'm going to the autumn retreat, how do I book my flight and when?",
+    "answer": "Book your flight in *TravelPerk*, signed in with your Orbit Google account, not on a personal card. Use the trip label `retreat-2026-autumn` and book only your flights there, because Ops has already booked the retreat venue. Do it *at least 6 weeks before* the retreat. Bookings made closer than that need Ops approval and usually cost 30\u201350% more. Fly economy unless the flight is *longer than 8 hours*, in which case premium economy or business is allowed. If you need a visa, ask for an invitation letter in #ops-travel at least 8 weeks ahead. The knowledge base doesn't give the actual autumn retreat dates, so check those with #ops-travel to work out your deadline.",
+    "sources": [
+      "travel-booking.md"
+    ],
+    "cost_usd": 0.030767500000000003,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 8392
+  },
+  {
+    "question": "What's the hotel cap for a conference in London?",
+    "answer": "For a conference in London, the hotel cap is *USD 300 per night*. The standard cap is USD 220 per night, and London gets the higher rate along with San Francisco and New York. Book the hotel through *TravelPerk* in the same trip as your flights, using the trip label `conf-<event name>`.",
+    "sources": [
+      "travel-booking.md"
+    ],
+    "cost_usd": 0.0263088,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 5565
+  },
+  {
+    "question": "Can I spend $400 on a standing desk for my home office?",
+    "answer": "Yes. Home-office equipment (desk, chair, monitor) is covered up to *USD 500 per year* with no pre-approval needed, so a $400 standing desk fits as long as you haven't already spent more than $100 of that allowance this year. Submit it in Expensify with the receipt (needed for anything over USD 25) within *30 days* of buying it. After that, it needs director approval. If the desk would take you over $500 for the year, get written approval from your manager *before* you buy it.",
+    "sources": [
+      "expense-policy.md"
+    ],
+    "cost_usd": 0.0274675,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 6406
+  },
+  {
+    "question": "What is the office wifi password?",
+    "answer": "I don't know, ask #it-help. The knowledge base doesn't have the office wifi password; the closest thing I found is the laptop setup doc, which says staff get a 1Password invite on their first day for shared credentials.",
+    "sources": [],
+    "cost_usd": 0.013075,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 8787
+  },
+  {
+    "question": "What's the limit?",
+    "answer": "Which limit are you asking about? A few policies have one: *expense limits* by category (expense-policy.md), *AI tool / API credit budget* (ai-tool-budget.md), or *PTO allowances* (pto-policy.md).",
+    "sources": [],
+    "cost_usd": 0.021640600000000003,
+    "cost_source": "reported",
+    "backend": "claude-code",
+    "num_turns": 3,
+    "duration_ms": 4893
+  }
+]

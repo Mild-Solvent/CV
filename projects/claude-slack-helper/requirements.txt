@@ -1,0 +1,5 @@
+mcp>=2.3,<3          # MCP server (MCPServer, formerly FastMCP)
+slack-bolt>=1.30,<2  # Slack app, Socket Mode
+anthropic>=1.17,<2   # only for BRAIN=api
+pyyaml>=6
+pytest>=8
