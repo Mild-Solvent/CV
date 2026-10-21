@@ -1,0 +1,49 @@
+# Eval set for the Orbit helper. Three kinds of question:
+#   expect: [substrings]  - an answerable question; every substring must appear (case-insensitive)
+#   must_refuse: true     - not in the KB; the reply must contain "I don't know"
+#   must_clarify: true    - ambiguous; the reply must ask a question and not pick a policy
+# `source` is the doc a correct answer should cite.
+- id: pto-days
+  question: How many days of PTO do I get per year?
+  expect: ["28"]
+  source: pto-policy.md
+- id: pto-carryover
+  question: Can I carry unused holiday into next year?
+  expect: ["5", "31 March"]
+  source: pto-policy.md
+- id: expense-receipt
+  question: Do I need a receipt for a $20 coffee I bought while travelling?
+  expect: ["25"]
+  source: expense-policy.md
+- id: travel-business
+  question: When am I allowed to fly business class?
+  expect: ["8 hours"]
+  source: travel-booking.md
+- id: laptop-lost
+  question: My laptop was stolen, what do I do?
+  expect: ["#it-help", "24 hours"]
+  source: laptop-it-setup.md
+- id: api-budget
+  question: I need about $600 of API credits for an eval run next month. Who approves that?
+  expect: ["#ai-tools", "1,000"]
+  source: ai-tool-budget.md
+- id: data-confidential
+  question: Can I paste a licensed dataset into Claude in Slack?
+  expect: ["orbit-secure"]
+  source: data-handling.md
+- id: onboarding-probation
+  question: How long is probation and when do I get feedback?
+  expect: ["3 months", "30"]
+  source: onboarding-checklist.md
+- id: refuse-wifi
+  question: What is the office wifi password?
+  must_refuse: true
+- id: refuse-dental
+  question: Which dental insurance provider do we use?
+  must_refuse: true
+- id: clarify-limit
+  question: What is the limit?
+  must_clarify: true
+- id: clarify-approval
+  question: How do I get approval?
+  must_clarify: true
