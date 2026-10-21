@@ -4,9 +4,9 @@ A one-page guide and a five-day coaching plan. Denis Matejcik, October 2026.
 
 I wrote this in October 2026 as the guide I would hand a new colleague. If you are reading it as part of my Epoch application: the coaching plan is what I would run in week one.
 
-## What Claude is good at, and the two things it is bad at
+## What Claude is good at, and the three things it is bad at
 
-Claude is good at work that starts from text you already have. Give it a messy document and it will summarise, restructure, draft, compare or explain it. It is patient with rewrites, and it follows a format when you ask for one. It is bad at two things. First, recent facts: it has a training cutoff and does not know what happened last week unless you paste it in. Second, your internal context: it does not know your team, your projects or your conventions unless you tell it. Most bad answers come from one of these two gaps. Most good answers come from giving it the right material first.
+Claude is good at work that starts from text you already have. Give it a messy document and it will summarise, restructure, draft, compare or explain it. It is patient with rewrites, and it follows a format when you ask for one. It is bad at three things. First, recent facts: it has a training cutoff and does not know what happened last week unless you paste it in. Second, your internal context: it does not know your team, your projects or your conventions unless you tell it. Third, it fills gaps confidently: when it lacks a fact it can produce a plausible one. That is why habit 5 below exists. Most bad answers come from one of these three gaps. Most good answers come from giving it the right material first.
 
 ## Your first 30 minutes: turn a messy meeting note into a decision log
 

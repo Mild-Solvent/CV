@@ -78,6 +78,10 @@ Sources: pto-policy.md
 Cost: $0.0451 (reported) · backend: claude-code
 ```
 
+The same question cost $0.0280 in the eval run and $0.0169 in the recorded demo: the agent
+sometimes reads one document and sometimes two or three before answering. The budget below uses
+the average across all 18 recorded calls, not the best case.
+
 Six more recorded questions, including a refusal and a clarifying question, are in
 [`demo/transcript.md`](demo/transcript.md) (`demo/transcript.json` has the same data).
 
