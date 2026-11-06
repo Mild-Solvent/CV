@@ -413,6 +413,7 @@
   /* page 1 carries far more text than page 2, so on paper it widens to
      A4's proportions instead of printing as a tall narrow column */
   html.printing .sheet-one{width:1020px}
+.tl-body p a,.level .txt p a{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -443,7 +444,7 @@
         <!-- ✏️ EDIT: page-1 kicker -->
         <p class="role">THE CHRONICLE &middot; PAGE I OF II</p>
         <h1>DENIS<br><span class="accent">MATEJCIK</span></h1>
-        <p class="chron-sub">Developer &middot; games &amp; software</p>
+        <p class="chron-sub">Developer &middot; AI automation, games &amp; software</p>
       </header>
 
       <div class="inventory chron-inv">
@@ -477,6 +478,21 @@
 
       <!-- ✏️ EDIT: timeline rows. Colour classes: g / b / a / r / v -->
       <div class="tl">
+
+        <div class="tl-row r">
+          <span class="tl-year">2026</span>
+          <span class="tl-line"><i></i></span>
+          <div class="tl-body">
+            <div class="tl-title">
+              <h3><a href="https://mild-solvent.github.io/najsport-ai-demo/" target="_blank" rel="noopener">PRODUCT-DATA AI</a></h3>
+              <span class="tl-chip">LIVE DEMO</span>
+            </div>
+            <p>30 real in-stock products from a Slovak sports e-shop, enriched and audited by
+            Claude for &euro;0.07 each: parameters unified, 127 missing fields flagged, and
+            6 variants caught naming the wrong colour in the live shop&rsquo;s data.</p>
+            <p class="tl-stack">Claude API &middot; product-data audit &middot; per-item cost tracking</p>
+          </div>
+        </div>
 
         <div class="tl-row a">
           <span class="tl-year">NOW</span>
@@ -561,8 +577,8 @@
               <h3>AI AGENTS</h3>
               <span class="tl-chip">B2B STARTUP</span>
             </div>
-            <p>Building automation for B2B clients at an AI-agents startup: agent workflows,
-            tool and MCP integrations, and the unglamorous glue that makes an LLM actually
+            <p>Automation for B2B clients at <a href="https://teamday.ai" target="_blank" rel="noopener">teamday.ai</a>, an AI-agents startup: agent workflows,
+            tool and MCP integrations, scrapers, and the unglamorous glue that makes an LLM
             finish a job instead of describing it.</p>
             <p class="tl-stack">LLM tooling &middot; MCP &middot; scrapers &middot; pipelines</p>
           </div>
@@ -650,15 +666,15 @@
   <header>
     <div class="name-block">
       <!-- ✏️ EDIT: your role line -->
-      <p class="role">Thinker &middot; AI Wizzard</p>
+      <p class="role">Developer &middot; AI automation &amp; games</p>
       <!-- ✏️ EDIT: your name -->
       <h1>DENIS<br><span class="accent">MATEJCIK</span></h1>
       <!-- ✏️ EDIT: intro — 2-3 short sentences about you.
            NOTE: the last sentence has no typed period — the little guy throws
            the dot that lands after the final word (see #dot-target below). -->
       <p class="intro">
-        I build things that feel alive &mdash; marketplaces, games, AI agents.
-        Small team energy, fast pace, and focus.
+        I build things that feel alive &mdash; AI agents, marketplaces, games.
+        I ship with Claude Code and Codex every day.
         Always open to the next quest<span class="sr-dot">.</span><span id="dot-target" aria-hidden="true"></span>
       </p>
     </div>
@@ -724,9 +740,9 @@
       </div>
       <!-- ✏️ EDIT: project 3 description -->
       <p>
-        Worked at an AI-agents startup building automation for B2B clients &mdash;
-        agent workflows, tool integrations, and the secret sauce that
-        makes LLMs actually useful.
+        Agent workflows and MCP integrations for B2B<br>clients at teamday.ai.
+        Latest: an AI audit of<br>30 real e-shop products, at &euro;0.07 each &mdash;<br>
+        <a href="https://mild-solvent.github.io/najsport-ai-demo/" target="_blank" rel="noopener">see the live demo</a>.
       </p>
     </div>
     <div class="scene"><canvas id="spr-robot" aria-label="pixel character writes a task sheet and feeds it to a robot, which grows circuit traces ending in bubbles holding office-task icons: a banknote, a calendar, a bar chart and a document; data pulses travel along the traces"></canvas></div>
